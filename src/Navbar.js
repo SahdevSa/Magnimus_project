@@ -11,6 +11,7 @@ export default function NavBar(){
             <Nav.Link href = "/Pose_Mesh_Test">Pose</Nav.Link>
             <Nav.Link href = "/HandControlledCube">Hand Controlled Cube</Nav.Link>
             <Nav.Link href = "/CharacterControlDemo">Character Control Demo</Nav.Link>
+            <Nav.Link href = "/ReadyPlayerMe">Choose Avatar</Nav.Link>
         </Nav>
     </Navbar> 
 }

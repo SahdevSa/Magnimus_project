@@ -7,6 +7,7 @@ import HandControlledCube from './HandControlledCube';
 import CharacterControlDemo from './CharacterControlDemo';
 import NavBar from './Navbar';
 import Pose_Mesh_Test from './Pose_Mesh_Test';
+import ReadyPlayerMe from './readyPlayerMe';
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route exact path="/Hand_Mesh_Test" element = {<Hand_Mesh_Test/>}/>
           <Route exact path="/HandControlledCube" element = {<HandControlledCube/>}/>
           <Route exact path="/CharacterControlDemo" element = {<CharacterControlDemo/>}/>
+          <Route exact path="/ReadyPlayerMe" element = {<ReadyPlayerMe/>}/>
         </Routes>
       </Router>
       </div>

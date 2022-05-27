@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 
+import "./App.css"
+
 function ReadyPlayerMe(){
-    const subdomain = 'hallway' // See section about becoming a partner
+    const subdomain = 'demo' // See section about becoming a partner
     const iFrameRef = useRef(null)
     const [avatarUrl, setAvatarUrl] = useState('')
     const [showIFrame, setShowIFrame] = useState(true)
@@ -50,8 +52,8 @@ function ReadyPlayerMe(){
       let iFrame = iFrameRef.current
       if(iFrame) {
          iFrame.src = `https://${subdomain}.readyplayer.me/avatar?frameApi`
-         iFrame.width = 640;
-         iFrame.height = 480;
+         iFrame.width = 1280;
+         iFrame.height = 800;
       }
     })
     useEffect(() => {
@@ -74,8 +76,10 @@ function ReadyPlayerMe(){
             />
             <p id="avatarUrl">Avatar URL: {avatarUrl}</p>
             </div>
-            <div style = {{textAlign: 'center', width: window.screen.width, height: window.screen.height}}>
+            <div className = "readyPlayerBox">
             <iframe
+            width={1280}
+            height={800}
             allow="camera *; microphone *"
             className="iFrame"
             id="frame"

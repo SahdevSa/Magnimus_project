@@ -11,3 +11,9 @@
   padding: 12px;
   height: 3000px;
 }
+
+.readyPlayerBox{
+  margin: auto;
+  width: 60%;
+  padding: 10px;
+}

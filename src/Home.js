@@ -15,10 +15,20 @@ function Home(){
         ambientLight.castShadow = true;
         scene.add(ambientLight);
 
+        
         const boxGepmetry = new THREE.BoxGeometry(1,1,1);
         const boxMaterial = new THREE.MeshNormalMaterial();
         const boxMesh = new THREE.Mesh(boxGepmetry, boxMaterial);
         scene.add(boxMesh);
+
+        const group1 = new THREE.Group();
+        const cube1 = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial({color:0xf0da0f}));
+        cube1.position.x = -1;
+        const cube2 = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), new THREE.MeshNormalMaterial({color:0xffda0f}));
+        cube2.position.x = 3;
+        group1.add(cube1);
+        group1.add(cube2);
+        scene.add(group1);
 
         const axisHelper = new THREE.AxesHelper()
         scene.add(axisHelper);
@@ -31,6 +41,7 @@ function Home(){
             boxMesh.rotation.x += 0.01;
             boxMesh.rotation.y += 0.01;
             boxMesh.position.x +=0.01;
+            group1.rotation.x +=0.01;
             camera.lookAt(boxMesh.position);
             renderer.render( scene, camera );
             window.requestAnimationFrame( animate );

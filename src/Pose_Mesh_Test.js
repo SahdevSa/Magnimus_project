@@ -4,7 +4,9 @@ import * as pose from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import Webcam from 'react-webcam';
 import {useRef, useEffect, useState, Suspense} from 'react';
-
+import Chart_Test from './Chart_Test';
+import { Line} from 'react-chartjs-2'
+import { upload } from '@testing-library/user-event/dist/upload';
 
 function Pose_Mesh_Test() {
   const camRef = useRef(null);
@@ -13,8 +15,17 @@ function Pose_Mesh_Test() {
   const connect = window.drawConnectors;
   const drawLandmarks = window.drawLandmarks;
 
+  const lineRef = useRef();
+  const dataArray = [...Array(400).keys()];
+  const [landMarkArray, setLandMarkArray] = useState({
+    labels: [...Array(400).keys()],
+    datasets: [{
+      labels: '#votes',
+      data: dataArray,
+    }]
+  }, []);
+
   function onResults (results){
-    //console.log(results);
     canvasRef.current.width = camRef.current.video.videoWidth;
     canvasRef.current.height = camRef.current.video.videoHeight;
     const canvasElement = canvasRef.current;
@@ -31,8 +42,15 @@ function Pose_Mesh_Test() {
     drawLandmarks(canvasCtx, results.poseLandmarks,
                   {color: '#FF0000', lineWidth: 2});
     canvasCtx.restore();
-    //grid.updateLandmarks(results.poseWorldLandmarks);
+    dataArray.shift();
+    try{
+    dataArray.push(results.poseLandmarks[0].y);
+    }
+    catch(err){
+
+    }
   }
+
 
     useEffect(()=>{
     const pose = new Pose({locateFile: (file) => {
@@ -54,13 +72,21 @@ function Pose_Mesh_Test() {
       camera = new cam.Camera(camRef.current.video, {
         onFrame:async()=>{
           await pose.send({image: camRef.current.video})
+          /*setLandMarkArray({
+            labels: [...Array(400).keys()],
+            datasets: [{
+              labels: '#votes',
+              data: dataArray,
+            }]})*/
         },
         width: 640,
         height: 480,
       });
       camera.start();
     }
+
   })
+
     
   return (
     <div>
@@ -70,10 +96,22 @@ function Pose_Mesh_Test() {
       screenshotFormat = "image/jpeg"
       style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}/>
       </div>
-
+      
+      <div style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: -0, right: 0, textAlign: 'left', width: window.screen.width/5, height: window.screen.height/8}}>
+      <Line ref={lineRef}
+        data={landMarkArray}
+        width={100}
+        height= {300}
+        options={{maintainAspectRatio:false}}
+        redraw= {true}
+      />
+      </div>
+      
       <div>
       <canvas ref = {canvasRef}
-      style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}/>
+      style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}>
+        
+        </canvas>
       </div>
     </div>
   );

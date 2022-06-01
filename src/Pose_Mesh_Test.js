@@ -17,6 +17,8 @@ function Pose_Mesh_Test() {
 
   const lineRef = useRef();
   const dataArray = [...Array(400).keys()];
+  const dataArray2 = [...Array(33).keys()];
+  
   const [landMarkArray, setLandMarkArray] = useState({
     labels: [...Array(400).keys()],
     datasets: [{
@@ -43,12 +45,14 @@ function Pose_Mesh_Test() {
                   {color: '#FF0000', lineWidth: 2});
     canvasCtx.restore();
     dataArray.shift();
+    dataArray2.shift();
     try{
-    dataArray.push(results.poseLandmarks[0].y);
+      dataArray.push(results.poseLandmarks[0].y);
+      // dataArray2.push(20);
     }
     catch(err){
-
     }
+    
   }
 
 
@@ -87,9 +91,37 @@ function Pose_Mesh_Test() {
 
   })
 
-    
+  function MyForm() {
+    const [myCar, setMyCar] = useState("none");
+  
+    const handleChange = (event) => {
+      setMyCar(event.target.value)
+    }
+
+    return (
+      <form>
+        <select value={myCar} onChange={handleChange}>
+          <option value="none">none</option>
+          {Object.values(dataArray2).map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </select>
+      </form>
+    )
+  }
+
   return (
     <div>
+      <div className='Status-box'>
+        <span>
+          <h3 >Current Pose Status</h3>
+          <h5 className='Status-text'>None</h5>
+        </span>
+        <span style={{marginLeft: 'auto'}}>
+          <h3>Visible points</h3>
+          <MyForm/>
+        </span>
+      </div>
       <div style = {{visibility: 'hidden'}}>
       <Webcam 
       ref = {camRef} 

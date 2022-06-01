@@ -20,7 +20,7 @@
     "react-chartjs-2": "^4.1.0",
     "react-dom": "^18.1.0",
     "react-router-dom": "^6.3.0",
-    "react-scripts": "5.0.1",
+    "react-scripts": "^5.0.1",
     "react-three-fiber": "^6.0.13",
     "react-webcam": "^7.0.1",
     "three": "^0.141.0",

@@ -15,12 +15,11 @@ function Pose_Mesh_Test() {
   const connect = window.drawConnectors;
   const drawLandmarks = window.drawLandmarks;
 
+
   const lineRef = useRef();
-  const dataArray = [...Array(400).keys()];
-  const dataArray2 = [...Array(33).keys()];
-  
+  const dataArray = [...Array(100).keys()];
   const [landMarkArray, setLandMarkArray] = useState({
-    labels: [...Array(400).keys()],
+    labels: [...Array(100).keys()],
     datasets: [{
       labels: '#votes',
       data: dataArray,
@@ -44,11 +43,10 @@ function Pose_Mesh_Test() {
     drawLandmarks(canvasCtx, results.poseLandmarks,
                   {color: '#FF0000', lineWidth: 2});
     canvasCtx.restore();
-    dataArray.shift();
-    dataArray2.shift();
+    
     try{
-      dataArray.push(results.poseLandmarks[0].y);
-      // dataArray2.push(20);
+      dataArray.push(Math.abs((results.poseLandmarks[26].y- results.poseLandmarks[24].y)/(results.poseLandmarks[26].y- results.poseLandmarks[28].y)));
+      dataArray.shift();
     }
     catch(err){
     }
@@ -76,12 +74,6 @@ function Pose_Mesh_Test() {
       camera = new cam.Camera(camRef.current.video, {
         onFrame:async()=>{
           await pose.send({image: camRef.current.video})
-          /*setLandMarkArray({
-            labels: [...Array(400).keys()],
-            datasets: [{
-              labels: '#votes',
-              data: dataArray,
-            }]})*/
         },
         width: 640,
         height: 480,
@@ -110,6 +102,20 @@ function Pose_Mesh_Test() {
     )
   }
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLandMarkArray({
+        labels: [...Array(100).keys()],
+        datasets: [{
+          labels: '#votes',
+          data: dataArray,
+        }]});
+    }, 10000);
+  
+    return () => clearInterval(interval);
+  }, []);
+
+    
   return (
     <div>
       <div className='Status-box'>

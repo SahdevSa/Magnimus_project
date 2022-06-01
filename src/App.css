@@ -17,3 +17,8 @@
   width: 60%;
   padding: 10px;
 }
+.Status-box{
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}

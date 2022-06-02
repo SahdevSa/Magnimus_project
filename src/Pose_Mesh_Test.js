@@ -18,6 +18,7 @@ function Pose_Mesh_Test() {
 
   const lineRef = useRef();
   const dataArray = [...Array(100).keys()];
+  const dataArray2 = [...Array(33).keys()];
   const [landMarkArray, setLandMarkArray] = useState({
     labels: [...Array(100).keys()],
     datasets: [{
@@ -45,8 +46,11 @@ function Pose_Mesh_Test() {
     canvasCtx.restore();
     
     try{
-      dataArray.push(Math.abs((results.poseLandmarks[26].y- results.poseLandmarks[24].y)/(results.poseLandmarks[26].y- results.poseLandmarks[28].y)));
+      // dataArray.push(Math.abs((results.poseLandmarks[26].y- results.poseLandmarks[24].y)/(results.poseLandmarks[26].y- results.poseLandmarks[28].y)));
+      dataArray.push(results.poseLandmarks[0].y);
       dataArray.shift();
+
+
     }
     catch(err){
     }

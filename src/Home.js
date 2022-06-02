@@ -50,7 +50,9 @@ function Home(){
     }, [])
 
     return(
-        <canvas id= "myThreeJsCanvas"/>
+        <div>
+            <canvas id= "myThreeJsCanvas"/>
+        </div>
     )
 }
 

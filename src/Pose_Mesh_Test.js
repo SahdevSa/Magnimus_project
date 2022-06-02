@@ -4,9 +4,10 @@ import * as pose from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 import Webcam from 'react-webcam';
 import {useRef, useEffect, useState, Suspense} from 'react';
-import Chart_Test from './Chart_Test';
+
 import { Line} from 'react-chartjs-2'
-import { upload } from '@testing-library/user-event/dist/upload';
+import LineChart from './LineChart';
+
 // Have plot graph
 function Pose_Mesh_Test() {
   const camRef = useRef(null);
@@ -17,13 +18,26 @@ function Pose_Mesh_Test() {
 
 
   const lineRef = useRef();
-  const dataArray = [...Array(100).keys()];
+  const timeArray = [...Array(100).keys()];
+  const dataArray1 = [...Array(100).keys()];
+  const dataArray2 = [...Array(100).keys()];
   const [landMarkArray, setLandMarkArray] = useState({
     labels: [...Array(100).keys()],
-    datasets: [{
-      labels: '#votes',
-      data: dataArray,
-    }]
+    datasets: [
+          {
+            label: "First dataset",
+            data: dataArray1,
+            fill: true,
+            backgroundColor: "rgba(75,192,192,0.2)",
+            borderColor: "rgba(75,192,192,1)"
+          },
+          {
+            label: "Second dataset",
+            data: dataArray2,
+            fill: false,
+            borderColor: "#742774"
+          }
+        ],
   }, []);
 
   function onResults (results){
@@ -44,12 +58,14 @@ function Pose_Mesh_Test() {
                   {color: '#FF0000', lineWidth: 2});
     canvasCtx.restore();
     
-    try{
-      dataArray.push(Math.abs((results.poseLandmarks[26].y- results.poseLandmarks[24].y)/(results.poseLandmarks[26].y- results.poseLandmarks[28].y)));
-      dataArray.shift();
-    }
-    catch(err){
-
+    if(results.poseLandmarks[15].visibility>0.5 && results.poseLandmarks[16].visibility>0.5 ){
+      let d = new Date();
+      timeArray.push(d.getTime());
+      timeArray.shift()
+      dataArray1.push(results.poseLandmarks[15].y);
+      dataArray1.shift();
+      dataArray2.push(results.poseLandmarks[16].y);
+      dataArray2.shift();
     }
   }
 
@@ -86,11 +102,22 @@ function Pose_Mesh_Test() {
   useEffect(() => {
     const interval = setInterval(() => {
       setLandMarkArray({
-        labels: [...Array(100).keys()],
-        datasets: [{
-          labels: '#votes',
-          data: dataArray,
-        }]});
+        labels: timeArray,
+        datasets: [
+          {
+            label: "Left Hand",
+            data: dataArray1,
+            fill: true,
+            backgroundColor: "rgba(75,192,192,0.2)",
+            borderColor: "rgba(75,192,192,1)"
+          },
+          {
+            label: "Right Hand",
+            data: dataArray2,
+            fill: false,
+            borderColor: "#742774"
+          }
+        ]});
     }, 10000);
   
     return () => clearInterval(interval);
@@ -103,24 +130,15 @@ function Pose_Mesh_Test() {
       <Webcam 
       ref = {camRef} 
       screenshotFormat = "image/jpeg"
-      style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}/>
+      style = {{position: 'absolute', left: "10%", top: "30%", textAlign: 'center', width: window.screen.width/1.5, height: window.screen.height/1.5}}/>
       </div>
       
-      <div style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: -0, right: 0, textAlign: 'left', width: window.screen.width/5, height: window.screen.height/8}}>
-      <Line ref={lineRef}
-        data={landMarkArray}
-        width={100}
-        height= {300}
-        options={{maintainAspectRatio:false}}
-        redraw= {true}
-      />
-      </div>
+      <LineChart data= {landMarkArray}/>
       
       <div>
       <canvas ref = {canvasRef}
-      style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}>
-        
-        </canvas>
+      style = {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/1.5, height: window.screen.height/1.5}}>  
+      </canvas>
       </div>
     </div>
   );

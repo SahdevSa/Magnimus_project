@@ -4,7 +4,7 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader'
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls"
 
 function Home(){
-    let camera, scene, renderer, clock, joint; 
+    let camera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint; 
     const onWindowResize =() =>{
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
@@ -28,10 +28,15 @@ function Home(){
 
     const model = gltf.scene;
     
-    joint = model.getObjectByName( 'mixamorigLeftArm' );
-    joint.rotation.x = -0.2;
-    joint.rotation.y = -0.1;
-    joint.rotation.z = 0.1;
+    Left_Shoulder_Joint = model.getObjectByName( 'mixamorigLeftArm' );
+    Left_Shoulder_Joint.rotation.x = -0.2;
+    Left_Shoulder_Joint.rotation.y = -0.1;
+    Left_Shoulder_Joint.rotation.z = 0.1;
+
+    Right_Shoulder_Joint = model.getObjectByName( 'mixamorigRightArm' );
+    Right_Shoulder_Joint.rotation.x = -0.2;
+    Right_Shoulder_Joint.rotation.y = -0.1;
+    Right_Shoulder_Joint.rotation.z = 0.1;
         scene.add( model );
     } );
 
@@ -52,10 +57,11 @@ function Home(){
         const animate = () =>{
             requestAnimationFrame( animate );
             const t = clock.getElapsedTime();
-    
-            if ( joint ) {
-                joint.rotation.z += Math.sin( t ) * 0.005;
-            }
+            if(Left_Shoulder_Joint)
+            Left_Shoulder_Joint.rotation.z += Math.sin( t ) * 0.005;
+
+            if(Right_Shoulder_Joint)
+            Right_Shoulder_Joint.rotation.z += Math.sin( t ) * 0.005;
             controls.update();
             renderer.render( scene, camera);
         };

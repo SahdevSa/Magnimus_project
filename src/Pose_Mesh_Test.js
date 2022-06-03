@@ -21,6 +21,7 @@ function Pose_Mesh_Test() {
   const timeArray = [...Array(100).keys()];
   const dataArray1 = [...Array(100).keys()];
   const dataArray2 = [...Array(100).keys()];
+  const dataArray3 = [...Array(33).keys()];
   const [landMarkArray, setLandMarkArray] = useState({
     labels: [...Array(100).keys()],
     datasets: [
@@ -57,7 +58,10 @@ function Pose_Mesh_Test() {
     drawLandmarks(canvasCtx, results.poseLandmarks,
                   {color: '#FF0000', lineWidth: 2});
     canvasCtx.restore();
-    
+    if (results.poseLandmarks[0].visibility>0.5){
+      dataArray3.push(0);
+      dataArray3.shift();
+    }
     if(results.poseLandmarks[15].visibility>0.5 && results.poseLandmarks[16].visibility>0.5 ){
       let d = new Date();
       timeArray.push(d.getTime());
@@ -107,13 +111,18 @@ function Pose_Mesh_Test() {
       setMyCar(event.target.value)
     }
 
+    useEffect(() => {
+      document.title = `You clicked ${dataArray3.length} times`;
+    });
     return (
-      <form>
+      <form onClick={()=>setMyCar(myCar = "1")}>
         <select value={myCar} onChange={handleChange}>
           <option value="none">none</option>
-          {Object.values(dataArray2).map((item) => (
+          <option value="0">{myCar}</option>
+
+          {/* {Object.keys(dataArray3).map((item) => (
             <option key={item} value={item}>{item}</option>
-          ))}
+          ))} */}
         </select>
       </form>
     )

@@ -9,7 +9,8 @@ import NavBar from './Navbar';
 import Pose_Mesh_Test from './Pose_Mesh_Test';
 import ReadyPlayerMe from './readyPlayerMe';
 import Home from './Home';
-import Chart_Test from './Chart_Test';
+
+import CameraCharacterControl from './CameraCharacterControl';
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
       <div className='content' style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width, height: window.screen.height}}>
       <Router>
         <Routes>
-        <Route exact path="/" element = {<Chart_Test/>}/>
+        <Route exact path="/" element = {<CameraCharacterControl/>}/>
           <Route exact path="/Home" element = {<Home/>}/>
           <Route exact path="/Camera_Check" element = {<Camera_Check/>}/>
           <Route exact path="/Face_Mesh_Test" element = {<Face_Mesh_Test/>}/>

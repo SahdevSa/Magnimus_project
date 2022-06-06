@@ -14,7 +14,15 @@ function CameraCharacterControl(){
     const connect = window.drawConnectors;
     const drawLandmarks = window.drawLandmarks;
 
-    let threeCamera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint, Head_Joint, AngleRightArm =0, AngleLeftArm =0, head_z_Angle=0; 
+    let threeCamera, scene, renderer, clock;
+    let Head_Joint,  head_z_Angle=0;
+    let Left_Shoulder_Joint,  AngleLeftArm ={xAngle:0, yAngle:0,zAngle:0};
+    let Right_Shoulder_Joint, AngleRightArm ={xAngle:0, yAngle:0,zAngle:0};
+    let spineJoint, spineAngle=0;
+    let rightLegHipJoint, AngleRightLeg ={xAngle:0, yAngle:0,zAngle:0};
+    let leftLegHipJoint, AngleLeftLeg ={xAngle:0, yAngle:0,zAngle:0};
+    let counter = 0;
+
     const onWindowResize =() =>{
         threeCamera.aspect = window.innerWidth / window.innerHeight;
         threeCamera.updateProjectionMatrix();
@@ -22,7 +30,7 @@ function CameraCharacterControl(){
     }
 
     threeCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 10 );
-    threeCamera.position.set( 2, 2, - 2 );
+    threeCamera.position.set(2, 2, - 2);
     clock = new THREE.Clock();
 
     scene = new THREE.Scene();
@@ -39,15 +47,43 @@ function CameraCharacterControl(){
     const model = gltf.scene;
     
     Left_Shoulder_Joint = model.getObjectByName( 'mixamorigLeftArm' );
+    Left_Shoulder_Joint.rotation.x = 0;
+    Left_Shoulder_Joint.rotation.y = 0;
+    Left_Shoulder_Joint.rotation.z = 0;
 
     Right_Shoulder_Joint = model.getObjectByName( 'mixamorigRightArm' );
+    Right_Shoulder_Joint.rotation.x = 0;
+    Right_Shoulder_Joint.rotation.y = 0;
+    Right_Shoulder_Joint.rotation.z = 0;
 
     Head_Joint = model.getObjectByName( 'mixamorigHead' );
-    Head_Joint.rotation.z = head_z_Angle;
-        scene.add( model );
+
+    spineJoint =  model.getObjectByName( 'mixamorigSpine' );
+
+    rightLegHipJoint =  model.getObjectByName( 'mixamorigRightUpLeg' );
+    rightLegHipJoint.rotation.z = AngleRightLeg.zAngle;
+
+    leftLegHipJoint =  model.getObjectByName( 'mixamorigLeftUpLeg' );
+    leftLegHipJoint.rotation.z = AngleLeftLeg.zAngle;
+
+    scene.add( model );
+
     } );
 
-    
+    function getAngleBetweenVectors(startPoint, midPoint, endPoint){
+        let jointAngle = {xAngle: 0, yAngle:0, zAngle:0, confidence:0};
+
+        if(startPoint.visibility >0.5 && midPoint.visibility >0.5 && endPoint.visibility >0.5 ){
+            let startvector = {x:(startPoint.x-midPoint.x), y:(startPoint.y-midPoint.y), z:(startPoint.z-midPoint.z)};
+            let endVector = {x:(midPoint.x - endPoint.x) , y: (midPoint.y - endPoint.y), z:(midPoint.z - endPoint.z)};
+            jointAngle.xAngle = Math.atan2(endVector.z,endVector.y) - Math.atan2(startvector.z,startvector.y)
+            jointAngle.yAngle = Math.atan2(endVector.x,endVector.z) - Math.atan2(startvector.x,startvector.z)
+            jointAngle.zAngle = Math.atan2(endVector.y,endVector.x) - Math.atan2(startvector.y,startvector.x)
+            jointAngle.confidence = 1;
+        }
+        return jointAngle;
+    }
+
     useEffect(()=>{
         const canvas = document.getElementById("myThreeJsCanvas");
         renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
@@ -64,14 +100,36 @@ function CameraCharacterControl(){
         const animate = () =>{
             requestAnimationFrame( animate );
             const t = clock.getElapsedTime();
-            if(Left_Shoulder_Joint)
-            Left_Shoulder_Joint.rotation.z = AngleLeftArm;
+            if(Left_Shoulder_Joint){
+                Left_Shoulder_Joint.rotation.x = -AngleLeftArm.yAngle;
+                Left_Shoulder_Joint.rotation.y = -0.3;
+                Left_Shoulder_Joint.rotation.z = AngleLeftArm.zAngle;
+            }
 
-            if(Right_Shoulder_Joint)
-            Right_Shoulder_Joint.rotation.z = AngleRightArm;
+            if(Right_Shoulder_Joint){
+                Right_Shoulder_Joint.rotation.x = AngleRightArm.yAngle;
+                Right_Shoulder_Joint.rotation.y = 0.3;
+                Right_Shoulder_Joint.rotation.z = AngleRightArm.zAngle;
+            }
 
             if(Head_Joint)
             Head_Joint.rotation.z = head_z_Angle;
+
+            if(spineJoint)
+            spineJoint.rotation.z = spineAngle;
+
+            if(rightLegHipJoint){
+                rightLegHipJoint.rotation.x = AngleRightLeg.xAngle ;
+                rightLegHipJoint.rotation.z = AngleRightLeg.zAngle;
+            }
+            
+
+            if(leftLegHipJoint){
+                leftLegHipJoint.rotation.x = AngleLeftLeg.xAngle ;
+                leftLegHipJoint.rotation.z = AngleLeftLeg.zAngle;
+            }
+            
+
             controls.update();
             renderer.render( scene, threeCamera);
         };
@@ -97,17 +155,48 @@ function CameraCharacterControl(){
                       {color: '#FF0000', lineWidth: 2});
         canvasCtx.restore();
 
-        const nose_Vector = {x:results.poseLandmarks[0].x - (results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2, y:results.poseLandmarks[0].y - (results.poseLandmarks[11].y+ results.poseLandmarks[12].y)/2};
-        head_z_Angle = -Math.PI/2 - Math.atan2(nose_Vector.y, nose_Vector.x);
+        const shoulderCenter = {x:(results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2, y:(results.poseLandmarks[11].y+ results.poseLandmarks[12].y)/2,  z:(results.poseLandmarks[11].z+ results.poseLandmarks[12].z)/2};
+        const shoulderVector = {x:(results.poseLandmarks[11].x - results.poseLandmarks[12].x), y:(results.poseLandmarks[11].y- results.poseLandmarks[12].y), z:(results.poseLandmarks[11].z- results.poseLandmarks[12].z)};
+        const waistVector = {x:(results.poseLandmarks[23].x - results.poseLandmarks[24].x), y:(results.poseLandmarks[23].y- results.poseLandmarks[24].y), z:(results.poseLandmarks[23].z- results.poseLandmarks[24].z)};
+        const waistCenter =  {x:(results.poseLandmarks[24].x+ results.poseLandmarks[23].x)/2, y:(results.poseLandmarks[24].y+ results.poseLandmarks[23].y)/2, z:(results.poseLandmarks[24].z+ results.poseLandmarks[23].z)/2,};
 
-        const rightShoulderToWristVector = {x:results.poseLandmarks[16].x- results.poseLandmarks[12].x, y:results.poseLandmarks[16].y - results.poseLandmarks[12].y};
-        const rightHipToShoulderVector = {x:results.poseLandmarks[12].x- results.poseLandmarks[24].x, y:results.poseLandmarks[12].y - results.poseLandmarks[24].y};
-        AngleRightArm = 0.5-Math.PI/2 - Math.atan2(rightHipToShoulderVector.y- rightShoulderToWristVector.y , rightHipToShoulderVector.x- rightShoulderToWristVector.x);
+        const legCenter = {x:(results.poseLandmarks[27].x+ results.poseLandmarks[28].x)/2, y:(results.poseLandmarks[27].y+ results.poseLandmarks[28].y)/2};
+        const shoulderToWaistVector = {x: shoulderCenter.x-waistCenter.x, y:shoulderCenter.y-waistCenter.y, z:shoulderCenter.z-waistCenter.z};       
+        spineAngle = -0.6-2*(Math.PI/2 + Math.atan2(shoulderToWaistVector.y- waistVector.y , shoulderToWaistVector.x- waistVector.x));
+
+        const mouthVector = {x:(results.poseLandmarks[9].x - results.poseLandmarks[10].x), y:(results.poseLandmarks[9].y- results.poseLandmarks[10].y)};
+        head_z_Angle = spineAngle-Math.atan2(mouthVector.y, mouthVector.x) - Math.atan2(shoulderVector.y, shoulderVector.x);
+        head_z_Angle = head_z_Angle>0.9?0.9:head_z_Angle;
+        head_z_Angle = head_z_Angle<-0.9?-0.9:head_z_Angle;
+
+        let tempAng = getAngleBetweenVectors(results.poseLandmarks[14], results.poseLandmarks[12], results.poseLandmarks[11]);
+        AngleRightArm = tempAng.confidence==1?tempAng: AngleRightArm;
+        //if(AngleRightArm.yAngle<0) AngleRightArm.yAngle = -AngleRightArm.yAngle;
+
+        tempAng = getAngleBetweenVectors(results.poseLandmarks[12], results.poseLandmarks[11], results.poseLandmarks[13]);
+        AngleLeftArm = tempAng.confidence==1?tempAng: AngleLeftArm;
+        //if(AngleLeftArm.yAngle>0.7) AngleLeftArm.yAngle = AngleLeftArm.yAngle-0.7;
+
+        //const rightLegVector = {x:(results.poseLandmarks[28].x - results.poseLandmarks[24].x), y:(results.poseLandmarks[28].y- results.poseLandmarks[24].y)};
+        //AngleRightLeg = (-0.2+Math.PI/2+ Math.atan2(waistVector.y- rightLegVector.y , waistVector.x- rightLegVector.x));
+        tempAng = getAngleBetweenVectors(results.poseLandmarks[26], results.poseLandmarks[24], results.poseLandmarks[12]);
+        tempAng.zAngle = -tempAng.zAngle;
+        tempAng.xAngle = -(tempAng.xAngle +Math.PI/2+1.2);
+        AngleRightLeg = tempAng.confidence==1?tempAng: AngleRightLeg;
         
-        const leftShoulderToWristVector = {x:results.poseLandmarks[15].x- results.poseLandmarks[11].x, y:results.poseLandmarks[15].y - results.poseLandmarks[11].y};
-        const leftHipToShoulderVector = {x:results.poseLandmarks[11].x- results.poseLandmarks[23].x, y:results.poseLandmarks[11].y - results.poseLandmarks[23].y};
-        AngleLeftArm = 0.5+Math.PI/2 + Math.atan2(leftHipToShoulderVector.y- leftShoulderToWristVector.y , leftHipToShoulderVector.x- leftShoulderToWristVector.x);
-        
+        //const leftLegVector = {x:(results.poseLandmarks[27].x - results.poseLandmarks[23].x), y:(results.poseLandmarks[27].y- results.poseLandmarks[23].y)};
+        //AngleLeftLeg = (-0.2+Math.PI/2+ Math.atan2(waistVector.y- leftLegVector.y , waistVector.x- leftLegVector.x));
+        tempAng = getAngleBetweenVectors(results.poseLandmarks[25], results.poseLandmarks[24], results.poseLandmarks[11]);
+        tempAng.zAngle = -tempAng.zAngle+0.8;
+        tempAng.xAngle = -(tempAng.xAngle +Math.PI/2+1.2);
+        AngleLeftLeg = tempAng.confidence==1?tempAng: AngleLeftLeg;
+
+        counter +=1; 
+        if(counter%20==0)
+         {
+             console.log(AngleLeftLeg)
+
+         }
     }
 
 

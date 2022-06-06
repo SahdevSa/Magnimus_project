@@ -31,7 +31,7 @@ function CameraCharacterControl(){
 
     threeCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 10 );
     threeCamera.position.set(2, 2, - 2);
-    clock = new THREE.Clock();
+    clock = new THREE.Clock(); 
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xffffff );

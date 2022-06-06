@@ -111,18 +111,14 @@ function Pose_Mesh_Test() {
       setMyCar(event.target.value)
     }
 
-    useEffect(() => {
-      document.title = `You clicked ${dataArray3.length} times`;
-    });
     return (
       <form onClick={()=>setMyCar(myCar = "1")}>
         <select value={myCar} onChange={handleChange}>
           <option value="none">none</option>
-          <option value="0">{myCar}</option>
 
-          {/* {Object.keys(dataArray3).map((item) => (
+          {Object.keys(dataArray3).map((item) => (
             <option key={item} value={item}>{item}</option>
-          ))} */}
+          ))}
         </select>
       </form>
     )

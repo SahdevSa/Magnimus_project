@@ -130,9 +130,10 @@ function Home(){
         window.addEventListener( 'resize', onWindowResize, false );
 
         const controls = new OrbitControls(camera, renderer.domElement );
+        controls.maxPolarAngle = 1.50;
+        controls.maxDistance = 220;
+        controls.minDistance = 10;
         controls.target.set( 7,-0.5,0);
-        //controls.autoRotate = true;
-        //mixer.update(1);
         controls.update();
 
         const animate = () =>{
@@ -140,6 +141,7 @@ function Home(){
             if(mixer) mixer.update(clock.getDelta());
             controls.update();
             renderer.render( scene, camera);
+            document.getElementById('data_display').value = controls.getDistance();
         };
         animate();
     }, [])

@@ -31,7 +31,7 @@ function CameraCharacterControl(){
 
     threeCamera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.01, 10 );
     threeCamera.position.set(2, 2, - 2);
-    clock = new THREE.Clock();
+    clock = new THREE.Clock(); 
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xffffff );
@@ -46,30 +46,24 @@ function CameraCharacterControl(){
 
     const model = gltf.scene;
     
+    console.log(model);
     Left_Shoulder_Joint = model.getObjectByName( 'mixamorigLeftArm' );
-    Left_Shoulder_Joint.rotation.x = 0;
-    Left_Shoulder_Joint.rotation.y = 0;
-    Left_Shoulder_Joint.rotation.z = 0;
 
     Right_Shoulder_Joint = model.getObjectByName( 'mixamorigRightArm' );
-    Right_Shoulder_Joint.rotation.x = 0;
-    Right_Shoulder_Joint.rotation.y = 0;
-    Right_Shoulder_Joint.rotation.z = 0;
 
-    Head_Joint = model.getObjectByName( 'mixamorigHead' );
+    Head_Joint = model.getObjectByName( 'mixamorigNeck' );
 
     spineJoint =  model.getObjectByName( 'mixamorigSpine' );
 
     rightLegHipJoint =  model.getObjectByName( 'mixamorigRightUpLeg' );
-    rightLegHipJoint.rotation.z = AngleRightLeg.zAngle;
 
     leftLegHipJoint =  model.getObjectByName( 'mixamorigLeftUpLeg' );
-    leftLegHipJoint.rotation.z = AngleLeftLeg.zAngle;
 
     scene.add( model );
 
     } );
 
+    
     function getAngleBetweenVectors(startPoint, midPoint, endPoint){
         let jointAngle = {xAngle: 0, yAngle:0, zAngle:0, confidence:0};
 
@@ -88,7 +82,7 @@ function CameraCharacterControl(){
         const canvas = document.getElementById("myThreeJsCanvas");
         renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
         renderer.setPixelRatio( window.devicePixelRatio );
-        renderer.setSize( window.innerWidth, window.innerHeight );
+        //renderer.setSize( window.innerWidth, window.innerHeight );
         renderer.outputEncoding = THREE.sRGBEncoding;
 
         window.addEventListener( 'resize', onWindowResize, false );
@@ -101,9 +95,9 @@ function CameraCharacterControl(){
             requestAnimationFrame( animate );
             const t = clock.getElapsedTime();
             if(Left_Shoulder_Joint){
-                Left_Shoulder_Joint.rotation.x = -AngleLeftArm.yAngle;
-                Left_Shoulder_Joint.rotation.y = -0.3;
-                Left_Shoulder_Joint.rotation.z = AngleLeftArm.zAngle;
+                Left_Shoulder_Joint.quaternion._x = -AngleLeftArm.xAngle;
+                Left_Shoulder_Joint.quaternion._y = -0.3;
+                Left_Shoulder_Joint.quaternion._z= AngleLeftArm.zAngle;
             }
 
             if(Right_Shoulder_Joint){
@@ -192,10 +186,12 @@ function CameraCharacterControl(){
         AngleLeftLeg = tempAng.confidence==1?tempAng: AngleLeftLeg;
 
         counter +=1; 
-        if(counter%20==0)
+        if(counter%100==0)
          {
-             console.log(AngleLeftLeg)
-
+            //console.log(results.poseLandmarks[0])
+            document.getElementById('data_display').value = "Nose X: "+results.poseLandmarks[0].x +"\r\n"+ "Nose Y: "+results.poseLandmarks[0].y;
+            const imageSrc = camRef.current.getScreenshot();
+            console.log(imageSrc);
          }
     }
 
@@ -221,26 +217,27 @@ function CameraCharacterControl(){
             onFrame:async()=>{
               await pose.send({image: camRef.current.video})
             },
-            width: 640,
-            height: 480,
+            width: window.screen.width/4,
+            height: window.screen.height/4,
           });
           camera.start();
         }
     
-      })
+      }) 
 
     return(
         <div>
-            <canvas id= "myThreeJsCanvas"  style = {{position: 'absolute', left: "10%", top: "10%", textAlign: 'center', width: window.screen.width/1.5, height: window.screen.height/1.5}}/>
-            <canvas id= "poseCanvas" ref = {canvasRef} style = {{position: 'absolute', left: "10%", top: "10%", textAlign: 'center', width: window.screen.width/1.5, height: window.screen.height/1.5}}>
-            <div style = {{visibility: 'hidden'}}>
+            <canvas id= "myThreeJsCanvas"  style = {{position: 'absolute', left: "25%", top: "0%", textAlign: 'center', width: window.screen.width/2, height: window.screen.height/2, border: "1px solid black"}}/>
+           
+            <div style = {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black", visibility: 'visible'}}>
             <Webcam 
             ref = {camRef} 
             screenshotFormat = "image/jpeg"
-            style = {{position: 'absolute', marginLeft:'auto', marginRight: 'auto', left: 0, right: 0, textAlign: 'center', width: window.screen.width/5, height: window.screen.height/5}}/>
+            style =  {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}/>
             </div>
-            </canvas>
-            
+            <canvas id= "poseCanvas" ref = {canvasRef} style = {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}/>
+            <textarea id="data_display"  readonly="true" style = {{position: 'absolute', left: "0%", top: "35%", textAlign: 'center', width: window.screen.width/8, height: window.screen.height/8, border: "1px solid black"}}>Data</textarea>
+
         </div>
     )
 }

@@ -141,7 +141,8 @@ function Home(){
             if(mixer) mixer.update(clock.getDelta());
             controls.update();
             renderer.render( scene, camera);
-            document.getElementById('data_display').value = controls.getDistance();
+            document.getElementById('data_display').value = "Distance: "+controls.getDistance();
+            onWindowResize();
         };
         animate();
     }, [])

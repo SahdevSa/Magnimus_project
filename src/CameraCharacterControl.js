@@ -14,7 +14,20 @@ function CameraCharacterControl(){
     const connect = window.drawConnectors;
     const drawLandmarks = window.drawLandmarks;
 
-    let threeCamera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint, Head_Joint, AngleRightArm =0, AngleLeftArm =0, head_z_Angle=0, LeftLeg, RightLeg, AngleLeftLeg=0, AngleRightLeg=0, RightHip, LeftHip, AngleRightHip=0, AngleLeftHip=0, AngleRightAlbo=0, AngleLeftAlbo=0, RightForeArm, LeftForeArm, spine, AngleBetweenspineNLine=0;
+    let threeCamera, scene, renderer, clock;
+    let Head_Joint, head_z_Angle={xAngle: 0, yAngle:Math.PI/2, xzProjectionAngle:0, confidence:0};
+    let Left_Shoulder_Joint, AngleLeftArmZ =0, AngleLeftArmY=0, AngleLeftArmX=0, LeftSoulderjointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+    let RightForeArm, AngleRightAlbo=0;
+    let LeftForeArm, AngleLeftAlbo=0;
+    let Right_Shoulder_Joint, AngleRightArmZ =0, AngleRightArmX=0, AngleRightArmY=0, RightSoulderjointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+    let LeftUpLeg, AngleLeftUpLeg=Math.PI;
+    let RightUpLeg, AngleRightUpLeg=Math.PI, RightUpLegjointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+    let spine, AngleBetweenspineNLine=0;
+    let RightHip,  AngleRightHip=0;
+    let LeftHip, AngleLeftHip=0;
+    // temptype
+    let AngleRightUpLegx = 0, AngleRightUpLegz=0;
+
 
     const onWindowResize =() =>{
         threeCamera.aspect = window.innerWidth / window.innerHeight;
@@ -22,21 +35,12 @@ function CameraCharacterControl(){
         renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    threeCamera = new THREE.PerspectiveCamera( 65, window.innerWidth / window.innerHeight, 0.01, 10 );
-    threeCamera.position.set( 2, 2, - 2 );
+    threeCamera = new THREE.PerspectiveCamera( 38, window.innerWidth / window.innerHeight, 1, 20 );
+    threeCamera.position.set( 0, 1,  -4);
     clock = new THREE.Clock();
-
 
     scene = new THREE.Scene();
     scene.background = new THREE.Color( 0xffffff );
-
-    // const material = new THREE.LineBasicMaterial( { color: 0x0000ff } );
-    // const points = [];
-    // points.push( new THREE.Vector3( 0, -10, 0 ) );
-    // points.push( new THREE.Vector3( 0, 10, 0 ) );
-    // const geometry = new THREE.BufferGeometry().setFromPoints( points );
-    // const line = new THREE.Line( geometry, material );
-    // scene.add( line );
 
     const light = new THREE.HemisphereLight( 0xbbbbff, 0x444422 );
     light.position.set( 0, 1, 0 );
@@ -51,27 +55,48 @@ function CameraCharacterControl(){
     Left_Shoulder_Joint = model.getObjectByName( 'mixamorigLeftArm' );
     Right_Shoulder_Joint = model.getObjectByName( 'mixamorigRightArm' );
 
-    Head_Joint = model.getObjectByName( 'mixamorigHead' );
-    Head_Joint.rotation.z = head_z_Angle;
+    Head_Joint = model.getObjectByName( 'mixamorigNeck' );
+    spine = model.getObjectByName('mixamorigSpine');
 
-    LeftLeg = model.getObjectByName( 'mixamorigLeftLeg' );
-    RightLeg = model.getObjectByName( 'mixamorigRightLeg' );
+    LeftUpLeg = model.getObjectByName( 'mixamorigLeftUpLeg' );
+    RightUpLeg = model.getObjectByName( 'mixamorigRightUpLeg' );
 
     RightHip = model.getObjectByName( 'mixamorigRightHip' );
     LeftHip = model.getObjectByName( 'mixamorigLeftHip' );
+
     RightForeArm = model.getObjectByName( 'mixamorigRightForeArm');
     LeftForeArm = model.getObjectByName( 'mixamorigLeftForeArm');
     
-    spine = model.getObjectByName('mixamorigSpine');
+
     scene.add( model );
     } );
 
     function AngleBetTwoVector(x1, y1, x2, y2){
       let d = x1*x2+y1*y2;
       let n = ((x1**2+y1**2)**0.5)*((x2**2+y2**2)**0.5);
-      return Math.acos(d/n)/Math.PI;
+      return Math.acos(d/n);
     }
-    // console.log(AngleBetTwoVector(0, 1, 1, 0));
+
+    function AngleBetTwo3DVector(x1, y1, z1, x2, y2, z2){
+        let d = x1*x2+y1*y2+z1*z2;
+        let n = ((x1**2+y1**2+z1**2)**0.5)*((x2**2+y2**2+z2**2)**0.5);
+        return Math.acos(d/n);
+    }
+    
+    function getAngleBetweenVectors(startPoint, midPoint, endPoint){
+      let jointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+
+      if(startPoint.visibility >0.5 && midPoint.visibility >0.5 && endPoint.visibility >0.5 ){
+          let startvector = {x:(startPoint.x-midPoint.x), y:(startPoint.y-midPoint.y), z:(startPoint.z-midPoint.z)};
+          let endVector = {x:(midPoint.x - endPoint.x) , y: (midPoint.y - endPoint.y), z:(midPoint.z - endPoint.z)};
+          jointAngle.xAngle = Math.atan2(endVector.z,endVector.y) - Math.atan2(startvector.z,startvector.y);
+          jointAngle.yAngle = AngleBetTwo3DVector(startvector.x, startvector.y, startvector.z, 0, 1, 0); 
+          jointAngle.xzProjectionAngle = AngleBetTwo3DVector(startvector.x, 0, startvector.z, 0, 0, 1); 
+          jointAngle.confidence = 1;
+      }
+      return jointAngle;
+    }
+
     
     useEffect(()=>{
         const canvas = document.getElementById("myThreeJsCanvas");
@@ -89,35 +114,42 @@ function CameraCharacterControl(){
         const animate = () =>{
             requestAnimationFrame( animate );
             const t = clock.getElapsedTime();
-            if(Left_Shoulder_Joint)
-            Left_Shoulder_Joint.rotation.z = AngleLeftArm;
 
-            if(Right_Shoulder_Joint)
-            Right_Shoulder_Joint.rotation.z = AngleRightArm;
+            if(Left_Shoulder_Joint){
+              Left_Shoulder_Joint.rotation.x = Math.PI/2-LeftSoulderjointAngle.xzProjectionAngle;
+              Left_Shoulder_Joint.rotation.z = Math.PI/2-LeftSoulderjointAngle.yAngle;
+              // console.log(LeftSoulderjointAngle.yAngle, AngleLeftArmY, LeftSoulderjointAngle.xzProjectionAngle, AngleLeftArmZ);
 
-            // if(Head_Joint)
-            // Head_Joint.rotation.z = head_z_Angle;
+            }
+            if(Right_Shoulder_Joint){
+              Right_Shoulder_Joint.rotation.x = -Math.PI/2+RightSoulderjointAngle.xzProjectionAngle;
+              Right_Shoulder_Joint.rotation.z = Math.PI/2-RightSoulderjointAngle.yAngle;
+              // console.log(RightSoulderjointAngle.yAngle, AngleRightArmY, RightSoulderjointAngle.xzProjectionAngle, AngleRightArmZ);
 
-            if (LeftLeg)
-            LeftLeg.rotation.x = AngleLeftLeg;
+            }
+            if (RightForeArm){
+              RightForeArm.rotation.z = AngleRightAlbo+ Math.PI;
+            }
+            if (LeftForeArm){
+              LeftForeArm.rotation.z = AngleLeftAlbo + Math.PI;
+            }
+            if (spine){
+              spine.rotation.z = AngleBetweenspineNLine;
+            }
 
-            if (RightLeg)
-            RightLeg.rotation.x = AngleRightLeg;
 
-            if (RightHip)
-            RightHip.rotation.x = AngleRightHip;
+            if (RightUpLeg){
+              // 
+              RightUpLeg.rotation.x = Math.PI-AngleRightUpLegz;
+              // RightUpLeg.rotation.z = AngleRightUpLegx;
+              
+              // console.log(AngleRightUpLegx);
+              // RightUpLeg.rotation.x = RightUpLegjointAngle.xzProjectionAngle;
+              // RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
+            }
 
-            if (LeftHip)
-            LeftHip.rotation.x = AngleLeftHip;
 
-            if (RightForeArm)
-            RightForeArm.rotation.z =AngleRightAlbo;
 
-            if (LeftForeArm)
-            LeftForeArm.rotation.z = -AngleLeftAlbo+AngleLeftArm;
-
-            if (spine)
-            spine.rotation.z = AngleBetweenspineNLine;
 
 
             controls.update();
@@ -127,6 +159,7 @@ function CameraCharacterControl(){
     }, [])
 
     function onResults (results){
+      //
         canvasRef.current.width = camRef.current.video.videoWidth;
         canvasRef.current.height = camRef.current.video.videoHeight;
         const canvasElement = canvasRef.current;
@@ -135,59 +168,48 @@ function CameraCharacterControl(){
         
         canvasCtx.save();
             
-        // canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.globalCompositeOperation = 'source-over';
-        connect(canvasCtx, results.poseLandmarks, pose.POSE_CONNECTIONS,
-                       {color: '#00FF00', lineWidth: 4});
-                       connect(canvasCtx, results.poseLandmarks,
-                      {color: '#FF0000', lineWidth: 2});
-        drawLandmarks(canvasCtx, results.poseLandmarks,
-                      {color: '#FF0000', lineWidth: 2});
+        connect(canvasCtx, results.poseLandmarks, pose.POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 4});
+        connect(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
+        drawLandmarks(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
         canvasCtx.restore();
-        // const topspinepoint = {x:(results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2, y:(results.poseLandmarks[11].y+ results.poseLandmarks[12].y)/2, z:(results.poseLandmarks[11].z+ results.poseLandmarks[12].z)/2};
-        // const bottomspinepoint = {x:(results.poseLandmarks[23].x+ results.poseLandmarks[24].x)/2, y:(results.poseLandmarks[23].y+ results.poseLandmarks[24].y)/2, z:(results.poseLandmarks[11].z + results.poseLandmarks[12].z)/2};
-        const spineVector = {x:((results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2 - (results.poseLandmarks[23].x+ results.poseLandmarks[24].x)/2), y:((results.poseLandmarks[11].y + results.poseLandmarks[12].y)/2-(results.poseLandmarks[23].y+ results.poseLandmarks[24].y)/2)};
-
+      //
+    //  Spin Vector
+        const spineVector = {x:((results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2 - (results.poseLandmarks[23].x+ results.poseLandmarks[24].x)/2), y:((results.poseLandmarks[11].y + results.poseLandmarks[12].y)/2-(results.poseLandmarks[23].y+ results.poseLandmarks[24].y)/2), z:((results.poseLandmarks[11].z + results.poseLandmarks[12].z)/2-(results.poseLandmarks[23].z+ results.poseLandmarks[24].z)/2)};
+        const spineVectorR = {x:(-(results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2 + (results.poseLandmarks[23].x+ results.poseLandmarks[24].x)/2), y:(-(results.poseLandmarks[11].y + results.poseLandmarks[12].y)/2+(results.poseLandmarks[23].y+ results.poseLandmarks[24].y)/2), z:(-(results.poseLandmarks[11].z + results.poseLandmarks[12].z)/2+(results.poseLandmarks[23].z+ results.poseLandmarks[24].z)/2)};
         AngleBetweenspineNLine = -(Math.PI/2 + Math.atan2(spineVector.y-0, spineVector.x-0));
-        // console.log(AngleBetweenspineNLine);
+    // Nose Vector from the center of chest
+        const midspine = {x:(results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2, y:(results.poseLandmarks[11].y+ results.poseLandmarks[12].y)/2, z:(results.poseLandmarks[11].z+ results.poseLandmarks[12].z)/2, visibility:1};
+        // head_z_Angle = -Math.PI/2 - Math.atan2(nose_Vector.y, nose_Vector.x);
+        head_z_Angle = getAngleBetweenVectors(results.poseLandmarks[0], midspine, results.poseLandmarks[1]);
 
-        const nose_Vector = {x:results.poseLandmarks[0].x - (results.poseLandmarks[11].x+ results.poseLandmarks[12].x)/2, y:results.poseLandmarks[0].y - (results.poseLandmarks[11].y+ results.poseLandmarks[12].y)/2};
+    //  Right soulder to Wrist Vector
+        let rightTempAngle = getAngleBetweenVectors(results.poseLandmarks[14], results.poseLandmarks[12], results.poseLandmarks[24]);
+        if (rightTempAngle.confidence==1){
+          RightSoulderjointAngle = rightTempAngle;
+        }
 
-        head_z_Angle = -Math.PI/2 - Math.atan2(nose_Vector.y, nose_Vector.x);
+    //  Left Soulder to Wrist Vector
+        let leftTempAngle = getAngleBetweenVectors(results.poseLandmarks[13], results.poseLandmarks[11], results.poseLandmarks[23]);
+        if (leftTempAngle.confidence==1){
+          LeftSoulderjointAngle = leftTempAngle;
+        }
 
-        const rightShoulderToWristVector = {x:results.poseLandmarks[14].x- results.poseLandmarks[12].x, y:results.poseLandmarks[14].y - results.poseLandmarks[12].y};
-        const rightHipToShoulderVector = {x:results.poseLandmarks[12].x- results.poseLandmarks[24].x, y:results.poseLandmarks[12].y - results.poseLandmarks[24].y};
-        AngleRightArm = AngleBetTwoVector(rightShoulderToWristVector.x, rightShoulderToWristVector.y, rightHipToShoulderVector.x, rightHipToShoulderVector.y);
-        // console.log(AngleRightArm);
-
-        const leftShoulderToWristVector = {x:results.poseLandmarks[13].x- results.poseLandmarks[11].x, y:results.poseLandmarks[13].y - results.poseLandmarks[11].y};
-        const leftHipToShoulderVector = {x:results.poseLandmarks[11].x- results.poseLandmarks[23].x, y:results.poseLandmarks[11].y - results.poseLandmarks[23].y};
-        AngleLeftArm = AngleBetTwoVector(leftHipToShoulderVector.x, leftHipToShoulderVector.y, leftShoulderToWristVector.x, leftShoulderToWristVector.y);
-
+    //  Right Wrist to Albo Vector
         const rightWristToAlboVector = {x:results.poseLandmarks[16].x- results.poseLandmarks[14].x, y:results.poseLandmarks[16].y - results.poseLandmarks[14].y};
         const rightAlboToShoulderVector = {x:results.poseLandmarks[12].x- results.poseLandmarks[14].x, y:results.poseLandmarks[12].y - results.poseLandmarks[14].y};
-        // AngleRightAlbo = Math.PI/2 - Math.atan2(rightWristToAlboVector.y- rightAlboToShoulderVector.y , rightWristToAlboVector.x- rightAlboToShoulderVector.x);
-        AngleRightAlbo = AngleBetTwoVector(rightAlboToShoulderVector.x, rightAlboToShoulderVector.y, rightWristToAlboVector.x, rightWristToAlboVector.y);
+        AngleRightAlbo = AngleBetTwoVector(rightWristToAlboVector.x, rightWristToAlboVector.y, rightAlboToShoulderVector.x, rightAlboToShoulderVector.y);
 
+        //  Left Wrist to Albo Vector
         const LeftWristToAlboVector = {x:results.poseLandmarks[15].x- results.poseLandmarks[13].x, y:results.poseLandmarks[15].y - results.poseLandmarks[13].y};
         const LeftAlboToShoulderVector = {x:results.poseLandmarks[11].x- results.poseLandmarks[13].x, y:results.poseLandmarks[11].y - results.poseLandmarks[13].y};
-        AngleLeftAlbo = Math.PI/2 - Math.atan2(LeftWristToAlboVector.y- LeftAlboToShoulderVector.y , LeftWristToAlboVector.x- LeftAlboToShoulderVector.x);
-
-     
-        const leftLegToHipVector = {x:results.poseLandmarks[23].z- results.poseLandmarks[25].z, y:results.poseLandmarks[23].y - results.poseLandmarks[25].y};
-        const leftKneeToAnkleVector = {x:results.poseLandmarks[25].z- results.poseLandmarks[27].z, y:results.poseLandmarks[25].y - results.poseLandmarks[27].y};
-        AngleLeftLeg = -0.75+Math.PI/2 - Math.atan2(leftKneeToAnkleVector.y- leftLegToHipVector.y , leftKneeToAnkleVector.y- leftLegToHipVector.y);
-
-        const rightLegToHipVector = {x:results.poseLandmarks[24].z- results.poseLandmarks[26].z, y:results.poseLandmarks[24].y - results.poseLandmarks[26].y};
-        const rightKneeToAnkleVector = {x:results.poseLandmarks[26].z- results.poseLandmarks[28].z, y:results.poseLandmarks[26].y - results.poseLandmarks[28].y};
-        AngleRightLeg = -0.75+Math.PI/2 - Math.atan2(rightKneeToAnkleVector.y- rightLegToHipVector.y , rightKneeToAnkleVector.y- rightLegToHipVector.y);
-
-        const rightSoulderToHipVector = {x:results.poseLandmarks[12].z- results.poseLandmarks[24].z, y:results.poseLandmarks[12].y - results.poseLandmarks[24].y};
-        const rightKneeToHipVector = {x:results.poseLandmarks[26].z- results.poseLandmarks[24].z, y:results.poseLandmarks[26].y - results.poseLandmarks[24].y};
-        AngleRightHip = Math.PI/2 - Math.atan2(rightKneeToHipVector.y- rightSoulderToHipVector.y , rightKneeToHipVector.y- rightSoulderToHipVector.y);
-
-        // console.log(AngleLeftArm, AngleRightArm, AngleLeftLeg, AngleRightLeg);
-
+        AngleLeftAlbo = AngleBetTwoVector(LeftWristToAlboVector.x, LeftWristToAlboVector.y, LeftAlboToShoulderVector.x, LeftAlboToShoulderVector.y);
+    //
+    
+    const RightUpLegVector = {x:results.poseLandmarks[26].x-results.poseLandmarks[24].x, y:results.poseLandmarks[26].y-results.poseLandmarks[24].y, z:results.poseLandmarks[26].z-results.poseLandmarks[24].z};
+    AngleRightUpLegx = AngleBetTwo3DVector(RightUpLegVector.x, RightUpLegVector.y, RightUpLegVector.z, 0, 1, 0);
+    AngleRightUpLegz = AngleBetTwo3DVector(RightUpLegVector.x, 0, RightUpLegVector.z, 0, 0, 1);
+    // console.log(AngleRightUpLegx*180/Math.PI);
     }
 
 

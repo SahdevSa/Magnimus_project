@@ -13,6 +13,8 @@ import * as cam from '@mediapipe/camera_utils';
 function Home(){
     let poseCamera, camera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint; 
     var model1, mixer, animationAction, gltfRef;
+    var hand_LandMark = {x1:0, y1:0, z1:0, x2:0, y2:0, z2:0}, distanceTravelled=0;
+    var punchAudio = new Audio('punch_sound.mp3');
     const camRef = useRef(null);
     const canvasRef = useRef(null);
     const connect = window.drawConnectors;
@@ -49,20 +51,19 @@ function Home(){
     // model
     const loader = new GLTFLoader();
     loader.load( 'IceHockey.glb', function ( gltf ) {
-
     const model = gltf.scene;
-    
         scene.add( model );
     } );
 
     const loader1 = new GLTFLoader();
-    loader1.load( 'remy_walk_idle_jump.glb', function ( gltf ) {
+    loader1.load( 'RiggedCharacter.glb', function ( gltf ) {
         gltfRef = gltf;
         model1 = gltf.scene.children[0];
         mixer = new THREE.AnimationMixer( model1 );
         model1.position.set(7,-0.5,0);
+        model1.scale.set(0.02,0.02,0.02);
         
-        animationAction = mixer.clipAction((gltf).animations[1])
+        animationAction = mixer.clipAction((gltf).animations[0])
         animationAction.play();
         scene.add( model1 );
     } );
@@ -100,24 +101,49 @@ function Home(){
         scene.add(text);
     })
 
+    // create an AudioListener and add it to the camera
+    const listener = new THREE.AudioListener();
+    camera.add( listener );
+
+    // create a global audio source
+    const sound = new THREE.Audio( listener );
+
+    // load a sound and set it as the Audio object's buffer
+    const audioLoader = new THREE.AudioLoader();
+    audioLoader.load( 'background.mp3', function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setLoop( true );
+        sound.setVolume( 0.05 );
+        sound.play();
+    });
+
     const onDocumentKeyDown = (event) =>{
         var keyCode = event.which;
         document.getElementById('data_display').value = "Key pressed: "+keyCode;
         animationAction.stop()
+        animationAction.setLoop(THREE.LoopOnce);
         if (keyCode == 32) {
-            animationAction = mixer.clipAction((gltfRef).animations[0])
+            animationAction = mixer.clipAction((gltfRef).animations[3])
             animationAction.play();
             // down
         } else if (keyCode == 38) {
-            animationAction = mixer.clipAction((gltfRef).animations[1])
+            animationAction = mixer.clipAction((gltfRef).animations[4])
             animationAction.play();
             // left
         } else if (keyCode == 39) {
-            animationAction = mixer.clipAction((gltfRef).animations[2])
+            animationAction = mixer.clipAction((gltfRef).animations[5])
             animationAction.play();
             // right
         }
     };
+
+    function playAudio(audio){
+        
+        return new Promise(res=>{
+          audio.play()
+          audio.onended = res
+        })
+      }
 
     useEffect(()=>{
         document.addEventListener("keydown", onDocumentKeyDown, false);
@@ -127,7 +153,7 @@ function Home(){
         renderer.setSize( window.innerWidth/1.5, window.innerHeigh/1.5);
         renderer.outputEncoding = THREE.sRGBEncoding;
 
-        window.addEventListener( 'resize', onWindowResize, false );
+        window.addEventListener( 'resize', onWindowResize, false);
 
         const controls = new OrbitControls(camera, renderer.domElement );
         controls.maxPolarAngle = 1.50;
@@ -141,19 +167,49 @@ function Home(){
             if(mixer) mixer.update(clock.getDelta());
             controls.update();
             renderer.render( scene, camera);
-            document.getElementById('data_display').value = "Distance: "+controls.getDistance();
             onWindowResize();
         };
         animate();
     }, [])
 
     function onResults (results){
+        if(results.poseLandmarks != undefined){
+            if(results.poseLandmarks[16].visibility<0.5){
+                distanceTravelled = 0;
+            }else{
+                hand_LandMark.x1 = hand_LandMark.x2;
+                hand_LandMark.y1 = hand_LandMark.y2;
+                hand_LandMark.z1 = hand_LandMark.z2;
+                hand_LandMark.x2 = results.poseLandmarks[16].x;
+                hand_LandMark.y2 = results.poseLandmarks[16].y;
+                hand_LandMark.z2 = results.poseLandmarks[16].z;
+                distanceTravelled = Math.pow(Math.pow((hand_LandMark.x2-hand_LandMark.x1),2)+ Math.pow((hand_LandMark.y2-hand_LandMark.y1),2) + Math.pow((hand_LandMark.z2-hand_LandMark.z1),2),0.5);
+            }
+        }
+        if(hand_LandMark && distanceTravelled>0.3){
+            document.getElementById('data_display').value = distanceTravelled+ "Punching";
+            if(mixer){
+            playAudio(punchAudio)
+            animationAction.stop();
+            animationAction = mixer.clipAction((gltfRef).animations[5])
+            animationAction.setLoop(THREE.LoopOnce);
+            animationAction.play();
+            }
+        }
+        else{
+            document.getElementById('data_display').value = distanceTravelled+ "Idle";
+            if(mixer){
+            if(!animationAction.isRunning()){
+            animationAction.stop();
+            animationAction = mixer.clipAction((gltfRef).animations[0])
+            animationAction.play();
+            }
+            }
+        }
         canvasRef.current.width = camRef.current.video.videoWidth;
         canvasRef.current.height = camRef.current.video.videoHeight;
         const canvasElement = canvasRef.current;
-        
         const canvasCtx = canvasElement.getContext("2d");
-        
         canvasCtx.save();
             
         //canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);

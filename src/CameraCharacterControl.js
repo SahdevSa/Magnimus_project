@@ -139,15 +139,15 @@ function CameraCharacterControl(){
             if (Head_Joint){
               Head_Joint.rotation.z = head_z_Angle;
             }
-            if (RightUpLeg){
-              // 
-              RightUpLeg.rotation.x = Math.PI-AngleRightUpLeg.xzProjectionAngle;
-              // RightUpLeg.rotation.z = AngleRightUpLeg.yAngle;
-              // console.log(AngleRightUpLegx, AngleRightUpLeg.yAngle);
+            // if (RightUpLeg){
+            //   // 
+            //   RightUpLeg.rotation.x = Math.PI-AngleRightUpLeg.xzProjectionAngle;
+            //   // RightUpLeg.rotation.z = AngleRightUpLeg.yAngle;
+            //   // console.log(AngleRightUpLegx, AngleRightUpLeg.yAngle);
               
-              // RightUpLeg.rotation.x = RightUpLegjointAngle.xzProjectionAngle;
-              // RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
-            }
+            //   // RightUpLeg.rotation.x = RightUpLegjointAngle.xzProjectionAngle;
+            //   // RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
+            // }
 
 
             controls.update();

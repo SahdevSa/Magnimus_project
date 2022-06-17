@@ -14,6 +14,7 @@ function Home(){
     let poseCamera, camera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint; 
     var model1, mixer, animationAction, gltfRef;
     var hand_LandMark = {x1:0, y1:0, z1:0, x2:0, y2:0, z2:0}, distanceTravelled=0;
+    var currentPoseData, currentTimeData;
 
     const [isActive, setIsActive] = useState(false);
 
@@ -181,8 +182,9 @@ function Home(){
     }, [])
 
     function onResults (results){
-        if(results.poseLandmarks != undefined){
-            //console.log(results.poseWorldLandmarks)
+        if(results.poseWorldLandmarks != undefined){
+            currentPoseData = results.poseWorldLandmarks;
+            currentTimeData = (new Date).getTime();
             if(results.poseWorldLandmarks[16].visibility<0.5){
                 distanceTravelled = 0;
             }else{
@@ -196,7 +198,6 @@ function Home(){
             }
         }
         if(hand_LandMark && distanceTravelled>0.1){
-            document.getElementById('data_display').value = distanceTravelled+ "Punching";
             if(mixer){
             playAudio(punchAudio)
             animationAction.stop();
@@ -207,7 +208,6 @@ function Home(){
             console.log(mixer.clipAction((gltfRef).animations));
         }
         else{
-            document.getElementById('data_display').value = distanceTravelled+ "Idle";
             if(mixer){
             if(!animationAction.isRunning()){
             animationAction.stop();
@@ -262,16 +262,54 @@ function Home(){
     
       }) 
 
-      useEffect(() => {
-        let timer = null;
-        if(isActive){
-          timer = setInterval(() => {
-          }, 1000);
+      var intervalID;
+      var poseSeriesData = [];
+      var timeSeriesData = [];
+      function acquireData(){
+          if(document.getElementById("data_Acquire_Button").innerHTML ==="Start Data Collection"){
+            
+            poseSeriesData = [];
+            timeSeriesData = [];
+            document.getElementById("data_Acquire_Button").innerHTML = "Get ready in 5 seconds";
+            setTimeout(()=>{
+                document.getElementById('data_display').value = "Data collection started"
+                document.getElementById("data_Acquire_Button").innerHTML = "Stop Data Collection";
+                intervalID = setInterval(()=>{
+                        if(hand_LandMark){
+                            poseSeriesData.push(currentPoseData);
+                            timeSeriesData.push(currentTimeData);
+                        }
+                    }, 160)
+            }, 5000)
+
+            setTimeout(()=>{
+                document.getElementById('data_display').value = "Data collection stopped"
+                clearInterval(intervalID);
+            }, 60000)
         }
-        return () => {
-          clearInterval(timer);
-        };
-      });
+        else{
+            document.getElementById("data_Acquire_Button").innerHTML = "Start Data Collection";
+            clearInterval(intervalID);
+            var lineArray = [ "data:text/csv;charset=utf-8,"];
+            lineArray = lineArray +"Time in ms from Jan1 1970,"
+            var marker_Num = 0;
+            poseSeriesData[0].forEach(function (infoLine, indx) {
+            lineArray = lineArray+ indx+ "_x," + indx+ "_y," + indx+ "_z,"+ indx+"_vis,"
+            })
+            lineArray = lineArray.slice(0, -1) + '\n';
+
+            poseSeriesData.forEach(function (infoArray, index) {
+            lineArray = lineArray + timeSeriesData[index];
+            infoArray.forEach(function (infoLine, indx) {
+                lineArray = lineArray + "," +infoLine["x"] + ", "+infoLine["y"]  + ", " +infoLine["z"] + ", " +infoLine["visibility"];
+            })
+            lineArray = lineArray + "\n";
+        });
+        console.log(lineArray);
+        var encodedUri = encodeURI(lineArray);
+        window.open(encodedUri);
+        }
+      }
 
     return(
         <div>
@@ -285,8 +323,8 @@ function Home(){
             </div>
             <canvas id= "poseCanvas" ref = {canvasRef} style = {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}/>
             <div class="landmark-grid-container" style = {{position: 'absolute', left: "0%", top: "25%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}></div>
-            <textarea id="data_display"  readonly="true" style = {{position: 'absolute', left: "0%", top: "50%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}>Data</textarea>
-            <button onClick={()=>{setIsActive(true);}} style = {{position: 'absolute', left: "5%", top: "85%", textAlign: 'center', width: window.screen.width/10, height: window.screen.height/30}}> Start Data Collection</button>
+            <textarea id="data_display"  readonly="true" style = {{position: 'absolute', left: "0%", top: "50%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black",fontWeight:"bold", fontSize: "50pt"}}>Data</textarea>
+            <button id="data_Acquire_Button" onClick={acquireData} style = {{position: 'absolute', left: "5%", top: "85%", textAlign: 'center', width: window.screen.width/10, height: window.screen.height/30}}> Start Data Collection</button>
 
         </div>
     )

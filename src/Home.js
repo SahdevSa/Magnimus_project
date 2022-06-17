@@ -30,7 +30,7 @@ function Home(){
     }
 
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.set( 5, 4, 10 );
+    camera.position.set( 5, 4, 10);
     clock = new THREE.Clock();
 
     scene = new THREE.Scene();
@@ -200,10 +200,11 @@ function Home(){
             if(mixer){
             playAudio(punchAudio)
             animationAction.stop();
-            animationAction = mixer.clipAction((gltfRef).animations[5])
+            animationAction = mixer.clipAction((gltfRef).animations[5]);
             animationAction.setLoop(THREE.LoopOnce);
             animationAction.play();
             }
+            console.log(mixer.clipAction((gltfRef).animations));
         }
         else{
             document.getElementById('data_display').value = distanceTravelled+ "Idle";

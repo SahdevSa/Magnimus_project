@@ -197,15 +197,21 @@ function Home(){
                 distanceTravelled = Math.pow(Math.pow((hand_LandMark.x2-hand_LandMark.x1),2)+ Math.pow((hand_LandMark.y2-hand_LandMark.y1),2) + Math.pow((hand_LandMark.z2-hand_LandMark.z1),2),0.5);
             }
         }
+        if(mixer){
+          // playAudio(punchAudio)
+          animationAction = mixer.clipAction((gltfRef).animations[3]); // 0 : none, 1: jump, 2:kick, 3:, 4:left punch, 5:right punch
+          animationAction.setLoop(THREE.LoopOnce);
+          animationAction.play();
+          }
         if(hand_LandMark && distanceTravelled>0.1){
             if(mixer){
             playAudio(punchAudio)
             animationAction.stop();
-            animationAction = mixer.clipAction((gltfRef).animations[5]);
+            animationAction = mixer.clipAction((gltfRef).animations[5]); // 0 : none, 1: jump, 2:kick, 3:, 4:left punch, 5:right punch
             animationAction.setLoop(THREE.LoopOnce);
             animationAction.play();
             }
-            console.log(mixer.clipAction((gltfRef).animations));
+            // console.log(mixer.clipAction((gltfRef).animations));
         }
         else{
             if(mixer){

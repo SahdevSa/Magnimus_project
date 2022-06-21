@@ -7,6 +7,7 @@ import {Pose} from '@mediapipe/pose';
 import * as pose from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 
+
 function CameraCharacterControl(){
     const camRef = useRef(null);
     const canvasRef = useRef(null);
@@ -21,12 +22,15 @@ function CameraCharacterControl(){
     let LeftForeArm, AngleLeftAlbo=0;
     let Right_Shoulder_Joint, AngleRightArmZ =0, AngleRightArmX=0, AngleRightArmY=0, RightSoulderjointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
     let LeftUpLeg, AngleLeftUpLeg=Math.PI;
-    let RightUpLeg, AngleRightUpLeg={xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0}, RightUpLegjointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+    let RightUpLeg, RightUpLegjointAngle = {xAngle: 0, yAngle:Math.PI, xzProjectionAngle:Math.PI, confidence:0};
+    let LeftLeg, AngleLeftLeg = Math.PI;
+    let RightLeg, AngleRightLeg = Math.PI;
     let spine, AngleBetweenspineNLine=0, AngleBetweenspineNLine3 = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
     let RightHip,  AngleRightHip=0;
     let LeftHip, AngleLeftHip=0;
     // temptype
     let AngleRightUpLegx = 0, AngleRightUpLegz=0;
+    let AngleLeftUpLegz = 0, AngleLeftUpLegx = 0;
 
 
     const onWindowResize =() =>{
@@ -60,6 +64,9 @@ function CameraCharacterControl(){
 
     LeftUpLeg = model.getObjectByName( 'mixamorigLeftUpLeg' );
     RightUpLeg = model.getObjectByName( 'mixamorigRightUpLeg' );
+
+    LeftLeg = model.getObjectByName( 'mixamorigLeftLeg' );
+    RightLeg = model.getObjectByName( 'mixamorigRightLeg' );
 
     RightHip = model.getObjectByName( 'mixamorigRightHip' );
     LeftHip = model.getObjectByName( 'mixamorigLeftHip' );
@@ -97,6 +104,20 @@ function CameraCharacterControl(){
       return jointAngle;
     }
 
+    function getAngleBetweenVectors_(startPoint, midPoint, Axis1, Axis2){
+      let jointAngle = {xAngle: 0, yAngle:0, xzProjectionAngle:0, confidence:0};
+
+      if(startPoint.visibility >0.5 && midPoint.visibility >0.5 ){
+          let startvector = {x:(startPoint.x-midPoint.x), y:(startPoint.y-midPoint.y), z:(startPoint.z-midPoint.z)};
+          // let endVector = {x:(midPoint.x - endPoint.x) , y: (midPoint.y - endPoint.y), z:(midPoint.z - endPoint.z)};
+          // jointAngle.xAngle = Math.atan2(endVector.z,endVector.y) - Math.atan2(startvector.z,startvector.y);
+          jointAngle.yAngle = AngleBetTwo3DVector(startvector.x, startvector.y, startvector.z, Axis1.x, Axis1.y, Axis1.z); 
+          jointAngle.xzProjectionAngle = AngleBetTwo3DVector(0, startvector.y, startvector.z, Axis2.x, Axis2.y, Axis2.z); 
+          jointAngle.confidence = 1;
+      }
+      return jointAngle;
+    }
+
     
     useEffect(()=>{
         const canvas = document.getElementById("myThreeJsCanvas");
@@ -123,7 +144,6 @@ function CameraCharacterControl(){
             if(Right_Shoulder_Joint){
               Right_Shoulder_Joint.rotation.x = -Math.PI/2+RightSoulderjointAngle.xzProjectionAngle;
               Right_Shoulder_Joint.rotation.z = Math.PI/2-RightSoulderjointAngle.yAngle;
-
             }
             if (RightForeArm){
               RightForeArm.rotation.z = AngleRightAlbo+ Math.PI;
@@ -135,20 +155,33 @@ function CameraCharacterControl(){
               spine.rotation.z = AngleBetweenspineNLine;
               spine.rotation.x = AngleBetweenspineNLine3;
             }
-
             if (Head_Joint){
               Head_Joint.rotation.z = head_z_Angle;
             }
-            // if (RightUpLeg){
-            //   // 
-            //   RightUpLeg.rotation.x = Math.PI-AngleRightUpLeg.xzProjectionAngle;
-            //   // RightUpLeg.rotation.z = AngleRightUpLeg.yAngle;
-            //   // console.log(AngleRightUpLegx, AngleRightUpLeg.yAngle);
-              
-            //   // RightUpLeg.rotation.x = RightUpLegjointAngle.xzProjectionAngle;
-            //   // RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
-            // }
+            if (RightHip){
+              if (AngleRightUpLegz>0)
+                RightHip.rotation.x = -(Math.PI/2 + AngleRightUpLegz);
+              RightHip.rotation.z = AngleRightUpLegx;     // Correct 
+            }
+            if (RightUpLeg){
+              if (AngleRightUpLegz>0)
+                RightUpLeg.rotation.x = -(Math.PI/2 + AngleRightUpLegz);
+              RightUpLeg.rotation.z = AngleRightUpLegx;     // Correct 
 
+              RightUpLeg.rotation.x =  RightUpLegjointAngle.xzProjectionAngle;
+              RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
+            }
+            if (LeftUpLeg){
+              if (AngleLeftUpLegz>0)
+                LeftUpLeg.rotation.x = -(Math.PI + AngleLeftUpLegz);
+              LeftUpLeg.rotation.z = -AngleLeftUpLegx;     // Correct 
+            }
+            if (RightLeg){
+              RightLeg.rotation.x = Math.PI - AngleRightLeg;
+            }
+            if (LeftLeg){
+              LeftLeg.rotation.x = Math.PI - AngleLeftLeg;
+            }
 
             controls.update();
             renderer.render( scene, threeCamera);
@@ -157,7 +190,7 @@ function CameraCharacterControl(){
     }, [])
 
   function onResults (results){
-    //
+    // 
         canvasRef.current.width = camRef.current.video.videoWidth;
         canvasRef.current.height = camRef.current.video.videoHeight;
         const canvasElement = canvasRef.current;
@@ -165,7 +198,7 @@ function CameraCharacterControl(){
         const canvasCtx = canvasElement.getContext("2d");
         
         canvasCtx.save();
-            
+        // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.globalCompositeOperation = 'source-over';
         connect(canvasCtx, results.poseLandmarks, pose.POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 4});
         connect(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
@@ -210,14 +243,48 @@ function CameraCharacterControl(){
         AngleLeftAlbo = AngleBetTwoVector(LeftWristToAlboVector.x, LeftWristToAlboVector.y, LeftAlboToShoulderVector.x, LeftAlboToShoulderVector.y);
     //
     
-    const RightUpLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[24].x, y:results.poseWorldLandmarks[26].y-results.poseWorldLandmarks[24].y, z:results.poseWorldLandmarks[26].z-results.poseWorldLandmarks[24].z};
-    AngleRightUpLegx = AngleBetTwo3DVector(RightUpLegVector.x, RightUpLegVector.y, RightUpLegVector.z, 0, 1, 0);
-    AngleRightUpLegz = AngleBetTwo3DVector(RightUpLegVector.x, 0, RightUpLegVector.z, 0, 0, 1);
-    AngleRightUpLeg = getAngleBetweenVectors(results.poseWorldLandmarks[26], results.poseWorldLandmarks[24], {x:0, y:1, z:0}, {x:0, y:0, z:1});
-    // if (tempUplegAngle.confidence==1){
-    //   AngleRightUpLeg = tempUplegAngle;
-    // }
-    // console.log(AngleRightUpLegx*180/Math.PI);
+        const RightUpLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[24].x, y:results.poseWorldLandmarks[26].y-results.poseWorldLandmarks[24].y, z:results.poseWorldLandmarks[26].z-results.poseWorldLandmarks[24].z};
+        let RightLegTempAng = getAngleBetweenVectors_(results.poseWorldLandmarks[26], results.poseWorldLandmarks[24], {x:0, y:1, z:0}, {x:0, y:0, z:1});    // Try
+        if (RightLegTempAng.confidence==1){
+          RightUpLegjointAngle = RightLegTempAng;
+        }
+        let ArightUpLx = AngleBetTwo3DVector(RightUpLegVector.x, RightUpLegVector.y, RightUpLegVector.z, 0, 1, 0);
+        let ArightUpLz= AngleBetTwo3DVector(0, RightUpLegVector.y, RightUpLegVector.z, 0, 0, 1);
+        if (results.poseWorldLandmarks[26].visibility > 0.6 && results.poseWorldLandmarks[24].visibility > 0.6){
+          AngleRightUpLegz = ArightUpLz;
+          AngleRightUpLegx = ArightUpLx;
+        }else{
+          AngleRightUpLegz = 0;
+          AngleRightUpLegx = 0;
+        }
+
+        const LeftUpLegVector = {x:results.poseWorldLandmarks[25].x-results.poseWorldLandmarks[23].x, y:results.poseWorldLandmarks[25].y-results.poseWorldLandmarks[23].y, z:results.poseWorldLandmarks[25].z-results.poseWorldLandmarks[23].z};
+        let AleftUpLx = AngleBetTwo3DVector(LeftUpLegVector.x, LeftUpLegVector.y, LeftUpLegVector.z, 0, 1, 0);
+        // let AleftUpLx = AngleBetTwo3DVector(LeftUpLegVector.x, LeftUpLegVector.y, 0, 0, 1, 0);
+        let AleftUpLz = AngleBetTwo3DVector(0, LeftUpLegVector.y, LeftUpLegVector.z, 0, 0, 1);
+        // let AleftUpLz = AngleBetTwo3DVector(0, LeftUpLegVector.y, LeftUpLegVector.z, 0, 1, 0);
+        if (results.poseWorldLandmarks[25].visibility > 0.6 && results.poseWorldLandmarks[23].visibility > 0.6){
+          AngleLeftUpLegz = AleftUpLz;
+          AngleLeftUpLegx = AleftUpLx;
+        }else{
+          AngleLeftUpLegz = 0;
+          AngleLeftUpLegx = 0;
+        }
+
+
+        // RightLeg Vector, Angle calculation
+        const RightLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[28].x, y:results.poseWorldLandmarks[28].y-results.poseWorldLandmarks[26].y, z:results.poseWorldLandmarks[28].z-results.poseWorldLandmarks[26].z};
+        let ArightLegz = AngleBetTwoVector(RightLegVector.y, RightLegVector.z, -RightUpLegVector.y, -RightUpLegVector.z);
+        if (results.poseWorldLandmarks[26].visibility > 0.6 && results.poseWorldLandmarks[28].visibility > 0.6){
+          AngleRightLeg = ArightLegz;
+        }
+
+        // RightLeg Vector, Angle calculation
+        const LeftLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[28].x, y:results.poseWorldLandmarks[28].y-results.poseWorldLandmarks[26].y, z:results.poseWorldLandmarks[28].z-results.poseWorldLandmarks[26].z};
+        let ALeftLegz = AngleBetTwoVector(LeftLegVector.y, LeftLegVector.z, -LeftUpLegVector.y, -LeftUpLegVector.z);
+        if (results.poseWorldLandmarks[25].visibility > 0.6 && results.poseWorldLandmarks[2].visibility > 0.6){
+          AngleLeftLeg = ALeftLegz;
+        }
     }
 
 
@@ -236,7 +303,7 @@ function CameraCharacterControl(){
         });
     
         pose.onResults(onResults);
-    
+            
         if(typeof camRef.current !==undefined && camRef.current !==null){
           camera = new cam.Camera(camRef.current.video, {
             onFrame:async()=>{

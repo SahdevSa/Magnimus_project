@@ -7,7 +7,6 @@ import {Pose} from '@mediapipe/pose';
 import * as pose from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
 
-
 function CameraCharacterControl(){
     const camRef = useRef(null);
     const canvasRef = useRef(null);
@@ -31,6 +30,7 @@ function CameraCharacterControl(){
     // temptype
     let AngleRightUpLegx = 0, AngleRightUpLegz=0;
     let AngleLeftUpLegz = 0, AngleLeftUpLegx = 0;
+
 
 
     const onWindowResize =() =>{
@@ -117,7 +117,6 @@ function CameraCharacterControl(){
       }
       return jointAngle;
     }
-
     
     useEffect(()=>{
         const canvas = document.getElementById("myThreeJsCanvas");
@@ -144,6 +143,7 @@ function CameraCharacterControl(){
             if(Right_Shoulder_Joint){
               Right_Shoulder_Joint.rotation.x = -Math.PI/2+RightSoulderjointAngle.xzProjectionAngle;
               Right_Shoulder_Joint.rotation.z = Math.PI/2-RightSoulderjointAngle.yAngle;
+
             }
             if (RightForeArm){
               RightForeArm.rotation.z = AngleRightAlbo+ Math.PI;
@@ -155,25 +155,32 @@ function CameraCharacterControl(){
               spine.rotation.z = AngleBetweenspineNLine;
               spine.rotation.x = AngleBetweenspineNLine3;
             }
+
             if (Head_Joint){
               Head_Joint.rotation.z = head_z_Angle;
             }
-            if (RightUpLeg){
-              if (AngleRightUpLegz>0)
-                RightUpLeg.rotation.x = -(Math.PI/2 + AngleRightUpLegz);
-              RightUpLeg.rotation.z = AngleRightUpLegx;     // Correct 
+            
+            if (RightHip){
+              RightHip.position.set(2, 0, 0);
+            }
 
+            if (RightUpLeg){
+              RightUpLeg.rotation.z = AngleRightUpLegx;     // Correct 
+              if (AngleRightUpLegz>0){
+                RightUpLeg.rotation.x = -(Math.PI/2 + AngleRightUpLegz);
+              }
               // RightUpLeg.rotation.x =  RightUpLegjointAngle.xzProjectionAngle;
               // RightUpLeg.rotation.z = RightUpLegjointAngle.yAngle;
             }
             if (LeftUpLeg){
-              if (AngleLeftUpLegz>0)
-                LeftUpLeg.rotation.x = -(Math.PI + AngleLeftUpLegz);
               LeftUpLeg.rotation.z = -AngleLeftUpLegx;     // Correct 
+              if (AngleLeftUpLegz>0)
+                LeftUpLeg.rotation.x = -(Math.PI/2 + AngleLeftUpLegz);
             }
             if (RightLeg){
               RightLeg.rotation.x = Math.PI - AngleRightLeg;
             }
+
             if (LeftLeg){
               LeftLeg.rotation.x = Math.PI - AngleLeftLeg;
             }
@@ -185,7 +192,7 @@ function CameraCharacterControl(){
     }, [])
 
   function onResults (results){
-    // 
+    //
         canvasRef.current.width = camRef.current.video.videoWidth;
         canvasRef.current.height = camRef.current.video.videoHeight;
         const canvasElement = canvasRef.current;
@@ -193,7 +200,7 @@ function CameraCharacterControl(){
         const canvasCtx = canvasElement.getContext("2d");
         
         canvasCtx.save();
-        // canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            
         canvasCtx.globalCompositeOperation = 'source-over';
         connect(canvasCtx, results.poseLandmarks, pose.POSE_CONNECTIONS, {color: '#00FF00', lineWidth: 4});
         connect(canvasCtx, results.poseLandmarks, {color: '#FF0000', lineWidth: 2});
@@ -253,6 +260,7 @@ function CameraCharacterControl(){
           AngleRightUpLegx = 0;
         }
 
+
         const LeftUpLegVector = {x:results.poseWorldLandmarks[25].x-results.poseWorldLandmarks[23].x, y:results.poseWorldLandmarks[25].y-results.poseWorldLandmarks[23].y, z:results.poseWorldLandmarks[25].z-results.poseWorldLandmarks[23].z};
         let AleftUpLx = AngleBetTwo3DVector(LeftUpLegVector.x, LeftUpLegVector.y, LeftUpLegVector.z, 0, 1, 0);
         // let AleftUpLx = AngleBetTwo3DVector(LeftUpLegVector.x, LeftUpLegVector.y, 0, 0, 1, 0);
@@ -267,17 +275,18 @@ function CameraCharacterControl(){
         }
 
 
+
         // RightLeg Vector, Angle calculation
-        const RightLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[28].x, y:results.poseWorldLandmarks[28].y-results.poseWorldLandmarks[26].y, z:results.poseWorldLandmarks[28].z-results.poseWorldLandmarks[26].z};
+        const RightLegVector = {x:results.poseWorldLandmarks[28].x-results.poseWorldLandmarks[26].x, y:results.poseWorldLandmarks[28].y-results.poseWorldLandmarks[26].y, z:results.poseWorldLandmarks[28].z-results.poseWorldLandmarks[26].z};
         let ArightLegz = AngleBetTwoVector(RightLegVector.y, RightLegVector.z, -RightUpLegVector.y, -RightUpLegVector.z);
-        if (results.poseWorldLandmarks[26].visibility > 0.6 && results.poseWorldLandmarks[28].visibility > 0.6){
+        if (results.poseWorldLandmarks[26].visibility > 0.4 && results.poseWorldLandmarks[28].visibility > 0.4){
           AngleRightLeg = ArightLegz;
         }
 
         // RightLeg Vector, Angle calculation
-        const LeftLegVector = {x:results.poseWorldLandmarks[26].x-results.poseWorldLandmarks[28].x, y:results.poseWorldLandmarks[28].y-results.poseWorldLandmarks[26].y, z:results.poseWorldLandmarks[28].z-results.poseWorldLandmarks[26].z};
+        const LeftLegVector = {x:results.poseWorldLandmarks[27].x-results.poseWorldLandmarks[25].x, y:results.poseWorldLandmarks[27].y-results.poseWorldLandmarks[25].y, z:results.poseWorldLandmarks[27].z-results.poseWorldLandmarks[25].z};
         let ALeftLegz = AngleBetTwoVector(LeftLegVector.y, LeftLegVector.z, -LeftUpLegVector.y, -LeftUpLegVector.z);
-        if (results.poseWorldLandmarks[25].visibility > 0.6 && results.poseWorldLandmarks[2].visibility > 0.6){
+        if (results.poseWorldLandmarks[25].visibility > 0.6 && results.poseWorldLandmarks[27].visibility > 0.6){
           AngleLeftLeg = ALeftLegz;
         }
     }
@@ -298,7 +307,7 @@ function CameraCharacterControl(){
         });
     
         pose.onResults(onResults);
-            
+    
         if(typeof camRef.current !==undefined && camRef.current !==null){
           camera = new cam.Camera(camRef.current.video, {
             onFrame:async()=>{

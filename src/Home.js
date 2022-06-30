@@ -9,6 +9,8 @@ import Webcam from "react-webcam";
 import {Pose} from '@mediapipe/pose';
 import * as pose from '@mediapipe/pose';
 import * as cam from '@mediapipe/camera_utils';
+import * as tf from '@tensorflow/tfjs'
+import { model } from "@tensorflow/tfjs";
 
 function Home(){
     let poseCamera, camera, scene, renderer, clock, Left_Shoulder_Joint, Right_Shoulder_Joint; 
@@ -274,7 +276,7 @@ function Home(){
                 document.getElementById('data_display').value = "Data collection started"
                 document.getElementById("data_Acquire_Button").innerHTML = "Stop Data Collection";
                 intervalID = setInterval(()=>{
-                        if(hand_LandMark){
+                        if(currentPoseData){
                             poseSeriesData.push(currentPoseData);
                             timeSeriesData.push(currentTimeData);
                         }
@@ -310,6 +312,69 @@ function Home(){
         }
       }
 
+      function makeArray(a,b) {
+        var arr = new Array(a)
+        for(var i = 0;i<a;i++)
+            arr[i] = new Array(b)
+        return arr
+    }
+
+    function preProcess(poseSeriesData){
+          var dataArr = makeArray(3,132);
+          for(var i = 0;i<3;i++){
+            for(var j = 0;j<33;j++){
+                dataArr[i][j*4] = poseSeriesData[i][j].x;
+                dataArr[i][j*4+1] = poseSeriesData[i][j].y;
+                dataArr[i][j*4+2] = poseSeriesData[i][j].z;
+                dataArr[i][j*4+3] = poseSeriesData[i][j].visibility;
+            }
+          }
+          var T = tf.tensor(dataArr);
+          T = T.reshape([1,3,132,1]);
+          return T;
+      }
+
+      async function load_model() {
+        let m = await tf.loadLayersModel('model.json')
+        return m;
+    }
+
+      var poseSeriesDataforPrediction = [];
+      function detectPose(){
+        let model = load_model();
+        poseSeriesDataforPrediction.push(currentPoseData);
+        poseSeriesDataforPrediction.push(currentPoseData);
+        poseSeriesDataforPrediction.push(currentPoseData);
+        intervalID = setInterval(()=>{
+            if(currentPoseData){
+                poseSeriesDataforPrediction.shift();
+                poseSeriesDataforPrediction.push(currentPoseData);
+                model.then(function (res) {
+                    let result = res.predict(preProcess(poseSeriesDataforPrediction)).reshape([8]);
+                    result = result.argMax().arraySync();
+                    if(result ==0)
+                        document.getElementById('data_display').value  = "Idle";
+                    else if(result ==1)
+                        document.getElementById('data_display').value  = "Jump";
+                    else if(result ==2)
+                        document.getElementById('data_display').value  = "Squat";
+                    else if(result ==3)
+                        document.getElementById('data_display').value  = "Jog in Place Straight";
+                    else if(result ==4)
+                        document.getElementById('data_display').value  = "Jog Bending Forward";
+                    else if(result ==5)
+                        document.getElementById('data_display').value  = "Jog Bending Backward";
+                    else if(result ==6)
+                        document.getElementById('data_display').value  = "Jog Right";
+                    else if(result ==7)
+                        document.getElementById('data_display').value  = "Jog Left";
+                }, function (err) {
+                    console.log(err);
+                });
+            }
+        }, 160)
+      }
+
     return(
         <div>
             <canvas id= "myThreeJsCanvas"  style = {{position: 'absolute', left: "25%", top: "0%", textAlign: 'center', width: window.screen.width/1.5, height: window.screen.height/1.5, border: "1px solid black"}}/>
@@ -324,7 +389,7 @@ function Home(){
             <div class="landmark-grid-container" style = {{position: 'absolute', left: "0%", top: "25%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}></div>
             <textarea id="data_display"  readonly="true" style = {{position: 'absolute', left: "0%", top: "50%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black",fontWeight:"bold", fontSize: "50pt"}}>Data</textarea>
             <button id="data_Acquire_Button" onClick={acquireData} style = {{position: 'absolute', left: "5%", top: "85%", textAlign: 'center', width: window.screen.width/10, height: window.screen.height/30}}> Start Data Collection</button>
-
+            <button id="pose_Detection_Button" onClick={detectPose} style = {{position: 'absolute', left: "18%", top: "85%", textAlign: 'center', width: window.screen.width/10, height: window.screen.height/30}}> Start Pose Detection</button>
         </div>
     )
 }

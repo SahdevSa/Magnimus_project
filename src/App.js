@@ -9,10 +9,14 @@ import NavBar from './Navbar';
 import Pose_Mesh_Test from './Pose_Mesh_Test';
 import ReadyPlayerMe from './readyPlayerMe';
 import Home from './Home';
+import Main from './Main';
+
 
 import CameraCharacterControl from './CameraCharacterControl';
 
 function App() {
+
+
   return (
 
     <div className="App">

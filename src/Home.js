@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader'
+import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls"
 
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader';
@@ -15,6 +16,23 @@ function Home(){
     var model1, mixer, animationAction, gltfRef;
     var hand_LandMark = {x1:0, y1:0, z1:0, x2:0, y2:0, z2:0}, distanceTravelled=0;
     var currentPoseData, currentTimeData;
+    var timeElapese=1;
+    var today = new Date();
+    let time1 = Date.now();
+    let decceleration = new THREE.Vector3(-0.0005, -0.0001, -5.0);
+    let acceleration = new THREE.Vector3(1, 0.25, 50.0);
+    let velocity = new THREE.Vector3(7, -0.5, 10);
+    let NoseAngle = 0, NoseY=4;
+
+    const raycaster = new THREE.Raycaster();
+    
+    // raycaster.set();
+
+    function AngleBetTwo3DVector(x1, y1, z1, x2, y2, z2){
+        let d = x1*x2+y1*y2+z1*z2;
+        let n = ((x1**2+y1**2+z1**2)**0.5)*((x2**2+y2**2+z2**2)**0.5);
+        return Math.acos(d/n);
+    }
 
     const [isActive, setIsActive] = useState(false);
 
@@ -30,8 +48,8 @@ function Home(){
         renderer.setSize( window.innerWidth/1.5, window.innerHeight/1.5);
     }
 
-    camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 1000 );
-    camera.position.set( 5, 4, 10);
+    camera = new THREE.PerspectiveCamera( 65, window.innerWidth / window.innerHeight, 1, 1000 );
+    camera.position.set( 7, 4, 10);
     clock = new THREE.Clock();
 
     scene = new THREE.Scene();
@@ -68,7 +86,7 @@ function Home(){
     const loader1 = new GLTFLoader();
     loader1.load( 'RiggedCharacter.glb', function ( gltf ) {
         gltfRef = gltf;
-        model1 = gltf.scene.children[0];
+        model1 = gltf.scene;
         mixer = new THREE.AnimationMixer( model1 );
         model1.position.set(7,-0.5,0);
         model1.scale.set(0.02,0.02,0.02);
@@ -109,6 +127,30 @@ function Home(){
         text.position.set(0,3,0);
         scene.add(text);
     })
+    // var logoLoader = new FBXLoader();
+    // logoLoader.load( 'logo1.fbx', function ( fbx ) {
+    //     // const model2 = gltf.scene;
+    //     const model2 = fbx.scene.children[0];
+    //     model2.position.set(14,0,0);
+    //     model2.scale.set(2,2,2);
+    //     scene.add( model2 );
+    // } );
+    let xxt = 0, fbx1;
+    const loader4 = new FBXLoader();
+    loader4.load('logo.fbx', (fbx) => {
+        fbx1 = fbx;                                                                                                                       
+        fbx.scale.setScalar(1);
+
+        fbx.rotation.z = Math.PI/3;
+        // fbx.rotation.x = Math.PI/3;
+        fbx.position.set(12, 2, 2);
+        fbx.traverse(c => {
+            c.castShadow = true;
+        });
+        scene.add(fbx);
+    })
+
+
 
     // create an AudioListener and add it to the camera
     const listener = new THREE.AudioListener();
@@ -126,24 +168,53 @@ function Home(){
         sound.play();
     });
 
+    
+    // var intersects = raycaster.intersectObject(scene, true);
+
+    // if (intersects.length > 0) {
+        
+    //     var object = intersects[0].object;
+
+    //     object.material.color.set( Math.random() * 0xffffff );
+    // }
+
     const onDocumentKeyDown = (event) =>{
         var keyCode = event.which;
         document.getElementById('data_display').value = "Key pressed: "+keyCode;
         animationAction.stop()
         animationAction.setLoop(THREE.LoopOnce);
+        if (keyCode == 65) {
+            animationAction = mixer.clipAction((gltfRef).animations[3])
+            animationAction.play();
+            // space
+        }
         if (keyCode == 32) {
             animationAction = mixer.clipAction((gltfRef).animations[3])
             animationAction.play();
-            // down
-        } else if (keyCode == 38) {
+            // space
+        } else if (keyCode == 37) {
             animationAction = mixer.clipAction((gltfRef).animations[4])
             animationAction.play();
             // left
-        } else if (keyCode == 39) {
+        } else if (keyCode == 38) {
             animationAction = mixer.clipAction((gltfRef).animations[5])
             animationAction.play();
+            // up
+        } else if (keyCode == 39) {
+            animationAction = mixer.clipAction((gltfRef).animations[6])
+            animationAction.play();
             // right
-        }
+        } else if (keyCode == 40) {
+            let time2 = Date.now();
+            animationAction = mixer.clipAction((gltfRef).animations[7])
+            animationAction.play();
+              
+            // down : Running
+        } else if (keyCode == 18) {
+            animationAction = mixer.clipAction((gltfRef).animations[8])
+            animationAction.play();
+            // down : 
+        } 
     };
 
     function playAudio(audio){
@@ -154,7 +225,17 @@ function Home(){
         })
       }
 
+    const mouse = new THREE.Vector2();
+
+    window.addEventListener('mousemove', (event) =>{
+        mouse.x = (event.clientX/window.innerWidth) * 2 - 1;
+        mouse.x = -(event.clientX/window.innerHeight) * 2 + 1;
+        // console.log(mouse.x)
+
+    })
+
     useEffect(()=>{
+ 
         document.addEventListener("keydown", onDocumentKeyDown, false);
         const canvas = document.getElementById("myThreeJsCanvas");
         renderer = new THREE.WebGLRenderer( { canvas, antialias: true } );
@@ -166,14 +247,34 @@ function Home(){
 
         const controls = new OrbitControls(camera, renderer.domElement );
         controls.maxPolarAngle = 1.50;
-        controls.maxDistance = 220;
-        controls.minDistance = 10;
+        controls.maxDistance = 200;
+        controls.minDistance = 8;
+        // controls.autoRotate = true;
+        controls.rotation = Math.PI/2;
         controls.target.set( 7,-0.5,0);
         controls.update();
-
         const animate = () =>{
+            // NoseAngle
             requestAnimationFrame( animate );
             if(mixer) mixer.update(clock.getDelta());
+            // camera.position.set(17*Math.sin(NoseAngle)+7, 4, 10);
+            if (fbx1){
+                fbx1.rotation.y += 0.02;
+            }
+            raycaster.setFromCamera(mouse, camera)
+            // const ObjectsToCheck = [fbx1]
+            // const intersects = raycaster.intersectObjects(ObjectsToCheck)
+            var intersects = raycaster.intersectObject(scene, true);
+
+            // for (const object of ObjectsToCheck){
+            //     object.material.color.set.set('#ff0000')
+            // }
+            for (const intersect of intersects){
+                // intersect.object
+                console.log(intersect.object.matetrail)
+
+            }
+
             controls.update();
             renderer.render( scene, camera);
             onWindowResize();
@@ -182,6 +283,7 @@ function Home(){
     }, [])
 
     function onResults (results){
+
         if(results.poseWorldLandmarks != undefined){
             currentPoseData = results.poseWorldLandmarks;
             currentTimeData = (new Date).getTime();
@@ -197,12 +299,7 @@ function Home(){
                 distanceTravelled = Math.pow(Math.pow((hand_LandMark.x2-hand_LandMark.x1),2)+ Math.pow((hand_LandMark.y2-hand_LandMark.y1),2) + Math.pow((hand_LandMark.z2-hand_LandMark.z1),2),0.5);
             }
         }
-        if(mixer){
-          // playAudio(punchAudio)
-          animationAction = mixer.clipAction((gltfRef).animations[3]); // 0 : none, 1: jump, 2:kick, 3:, 4:left punch, 5:right punch
-          animationAction.setLoop(THREE.LoopOnce);
-          animationAction.play();
-          }
+        
         if(hand_LandMark && distanceTravelled>0.1){
             if(mixer){
             playAudio(punchAudio)
@@ -237,9 +334,16 @@ function Home(){
         drawLandmarks(canvasCtx, results.poseLandmarks,
                       {color: '#FF0000', lineWidth: 2});
         canvasCtx.restore();
+
+
+
+        // const NoseVector = {x: results.poseWorldLandmarks[0].x, x: results.poseWorldLandmarks[0].y, z: results.poseWorldLandmarks[0].z}
+        NoseAngle = results.poseWorldLandmarks[0].x;
+        NoseY = results.poseWorldLandmarks[0].y;
     }
 
     useEffect(()=>{
+
         const pose = new Pose({locateFile: (file) => {
           return `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`;
         }});
@@ -254,6 +358,8 @@ function Home(){
         });
     
         pose.onResults(onResults);
+        timeElapese = timeElapese + 1;
+        console.log(timeElapese);
     
         if(typeof camRef.current !==undefined && camRef.current !==null){
           poseCamera = new cam.Camera(camRef.current.video, {
@@ -328,6 +434,7 @@ function Home(){
             style =  {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}/>
             </div>
             <canvas id= "poseCanvas" ref = {canvasRef} style = {{position: 'absolute', left: "0%", top: "0%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}/>
+            {/* <Asset/> */}
             <div class="landmark-grid-container" style = {{position: 'absolute', left: "0%", top: "25%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black"}}></div>
             <textarea id="data_display"  readonly="true" style = {{position: 'absolute', left: "0%", top: "50%", textAlign: 'center', width: window.screen.width/4, height: window.screen.height/4, border: "1px solid black",fontWeight:"bold", fontSize: "50pt"}}>Data</textarea>
             <button id="data_Acquire_Button" onClick={acquireData} style = {{position: 'absolute', left: "5%", top: "85%", textAlign: 'center', width: window.screen.width/10, height: window.screen.height/30}}> Start Data Collection</button>

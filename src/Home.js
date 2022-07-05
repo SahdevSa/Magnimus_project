@@ -271,7 +271,7 @@ function Home(){
             // }
             for (const intersect of intersects){
                 // intersect.object
-                console.log(intersect.object.matetrail)
+                console.log(intersect.object.animations)
 
             }
 

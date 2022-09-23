@@ -88,7 +88,7 @@ function Home(){
     const loader1 = new GLTFLoader();
     loader1.load( 'RiggedCharacter.glb', function ( gltf ) {
         gltfRef = gltf;
-        model1 = gltf.scene;
+        model1 = gltf.scene.children[0];
         mixer = new THREE.AnimationMixer( model1 );
         model1.position.set(7,-0.5,0);
         model1.scale.set(0.02,0.02,0.02);
@@ -228,10 +228,11 @@ function Home(){
       }
 
     const mouse = new THREE.Vector2();
+    mouse.normalize()
 
     window.addEventListener('mousemove', (event) =>{
-        mouse.x = (event.clientX/window.innerWidth) * 2 - 1;
-        mouse.x = -(event.clientX/window.innerHeight) * 2 + 1;
+        mouse.x = (event.clientX/(window.innerWidth))*2 - 1;
+        mouse.y = -(event.clientX/(window.innerHeight)) * 2 + 1;
         // console.log(mouse.x)
 
     })
@@ -273,7 +274,7 @@ function Home(){
             // }
             for (const intersect of intersects){
                 // intersect.object
-                console.log(intersect.object.animations)
+                console.log(intersect.object)
 
             }
 
@@ -361,7 +362,7 @@ function Home(){
     
         pose.onResults(onResults);
         timeElapese = timeElapese + 1;
-        console.log(timeElapese);
+        // console.log(timeElapese);
     
         if(typeof camRef.current !==undefined && camRef.current !==null){
           poseCamera = new cam.Camera(camRef.current.video, {
